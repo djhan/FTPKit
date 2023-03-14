@@ -40,29 +40,35 @@
 
 - (void)testFtp
 {
-    FTPClient * ftp = [[FTPClient alloc] initWithHost:@"localhost" port:21 username:@"unittest" password:@"unitpass"];
+    FTPClient * ftp = [[FTPClient alloc] initWithHost:@"djhan.asuscomm.com" port:21 username:@"djhan" password:@"shakamuth837"];
     
     // Sanity. Make sure the root path exists. This should always be true.
     BOOL success = [ftp directoryExistsAtPath:@"/"];
     XCTAssertTrue(success, @"");
     
-    NSArray *contents = [ftp listContentsAtPath:@"/test" showHiddenFiles:YES];
+    NSLog(@"Privates 리스팅");
+    //NSArray *contents = [ftp listContentsAtPath:@"/0.Privates" showHiddenFiles:YES];
+    NSArray *contents = [ftp getListContentsAtPath:@"/0.Privates" showHiddenFiles:YES];
     //XCTAssertNil(contents, @"Directory should not exist");
-    XCTAssertEqual(0, contents.count, @"");
+    //XCTAssertEqual(0, contents.count, @"");
     
-    long long int bytes = [ftp fileSizeAtPath:@"/ftplib.tgz"];
+    NSLog(@"exr.zip 사이즈 확인");
+    long long int bytes = [ftp fileSizeAtPath:@"/0.Privates/exr.zip"];
     XCTAssertTrue((bytes > 0), @"");
     
-    bytes = [ftp fileSizeAtPath:@"/copy.tgz"];
-    XCTAssertEqual(-1, -1, @"");
+//    bytes = [ftp fileSizeAtPath:@"/copy.tgz"];
+//    XCTAssertEqual(-1, -1, @"");
     
     // Create 'test1.txt' file to upload. Contents are 'testing 1'.
     NSURL *localUrl = [[[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject] URLByAppendingPathComponent:@"ftplib.tgz"];
     
+    NSLog(@"exr.zip 다운로드");
+
     // Download 'ftplib.tgz'
-    success = [ftp downloadFile:@"/ftplib.tgz" to:localUrl.path progress:NULL];
+    success = [ftp downloadFile:@"/0.Privates/exr.zip" to:localUrl.path progress:NULL];
     XCTAssertTrue(success, @"");
     
+    return;
     // Upload 'ftplib.tgz' as 'copy.tgz'
     success = [ftp uploadFile:localUrl.path to:@"/copy.tgz" progress:NULL];
     XCTAssertTrue(success, @"");

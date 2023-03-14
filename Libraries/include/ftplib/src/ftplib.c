@@ -1413,12 +1413,17 @@ static int FtpXfer(const char *localfile, const char *path,
             ac[0] = 'w';
         if (mode == FTPLIB_IMAGE)
             ac[1] = 'b';
-        local = fopen(localfile, ac);
-        if (local == NULL)
-        {
-            strncpy(nControl->response, strerror(errno),
-                    sizeof(nControl->response));
-            return 0;
+        if (mode == FTPLIB_FILE_WRITE) {
+            local = fopen(localfile, ac);
+            if (local == NULL)
+            {
+                strncpy(nControl->response, strerror(errno),
+                        sizeof(nControl->response));
+                return 0;
+            }
+        }
+        else {
+            local = localfile;
         }
     }
     if (local == NULL)
@@ -1450,12 +1455,23 @@ static int FtpXfer(const char *localfile, const char *path,
     {
         while ((l = FtpRead(dbuf, FTPLIB_BUFSIZ, nData)) > 0)
         {
-            if (fwrite(dbuf, 1, l, local) == 0)
-            {
-                if (ftplib_debug)
-                    perror("localfile write");
-                rv = 0;
-                break;
+            if (mode == FTPLIB_FILE_WRITE) {
+                if (fwrite(dbuf, 1, l, local) == 0)
+                {
+                    if (ftplib_debug)
+                        perror("localfile write");
+                    rv = 0;
+                    break;
+                }
+            }
+            else {
+                if (strcat(local, dbuf) == NULL)
+                {
+                    if (ftplib_debug)
+                        perror("data write error");
+                    rv = 0;
+                    break;                
+                }
             }
         }
     }

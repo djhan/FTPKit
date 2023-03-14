@@ -78,6 +78,13 @@
 - (long long int)fileSizeAtPath:(NSString *)path;
 
 /**
+ 목록을 가져오는 메쏘드
+ @param path 목록을 가져올 경로
+ @param showHiddenFiles 감춤 파일 표시 여부
+ @return List of contents as FTPHandle objects.
+ */
+- (NSArray *)getListContentsAtPath:(NSString *)path showHiddenFiles:(BOOL)showHiddenFiles;
+/**
  List directory contents at path.
  
  @param path Path to remote directory to list.

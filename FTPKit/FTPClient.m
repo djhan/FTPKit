@@ -131,11 +131,38 @@
     FTPHandle *hdl = [FTPHandle handleAtPath:path type:FTPHandleTypeDirectory];
     return [self listContentsAtHandle:hdl showHiddenFiles:showHiddenFiles];
 }
+- (NSArray *)getListContentsAtPath:(NSString *)path showHiddenFiles:(BOOL)showHiddenFiles
+{
+    FTPHandle *hdl = [FTPHandle handleAtPath:path type:FTPHandleTypeDirectory];
+    return [self getListContentsAtHandle:hdl showHiddenFiles:showHiddenFiles];
+}
 
 - (void)listContentsAtPath:(NSString *)path showHiddenFiles:(BOOL)showHiddenFiles success:(void (^)(NSArray *))success failure:(void (^)(NSError *))failure
 {
     FTPHandle *hdl = [FTPHandle handleAtPath:path type:FTPHandleTypeDirectory];
     [self listContentsAtHandle:hdl showHiddenFiles:showHiddenFiles success:success failure:failure];
+}
+
+/**
+ 목록을 가져오는 메쏘드
+ @param handle `FTPHandle`
+ @param showHiddenFiles 감춤 파일 표시 여부
+ */
+- (NSArray *)getListContentsAtHandle:(FTPHandle *)handle showHiddenFiles:(BOOL)showHiddenFiles
+{
+    netbuf *conn = [self connect];
+    if (conn == NULL)
+        return nil;
+    const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:NSUTF8StringEncoding];
+    NSMutableData *data = [[NSMutableData alloc] init];
+    int stat = FtpDir((const void *)[data bytes], path, conn);
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
+    if (stat == 0) {
+        self.lastError = [NSError FTPKitErrorWithResponse:response];
+        return nil;
+    }
+    NSArray *files = [self parseListData:data handle:handle showHiddentFiles:showHiddenFiles];
+    return files;
 }
 
 - (NSArray *)listContentsAtHandle:(FTPHandle *)handle showHiddenFiles:(BOOL)showHiddenFiles

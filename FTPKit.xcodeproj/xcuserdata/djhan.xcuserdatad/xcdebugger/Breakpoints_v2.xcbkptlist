@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Bucket
+   uuid = "04B3373D-46FF-4129-A535-302366CB4774"
+   type = "1"
+   version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "D9711641-0971-435A-8957-B6064E54DD11"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FTPKit/FTPClient.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "181"
+            endingLineNumber = "181"
+            landmarkName = "-listContentsAtHandle:showHiddenFiles:"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "D9711641-0971-435A-8957-B6064E54DD11 - 3334864ff30673cc"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "-[FTPClient listContentsAtHandle:showHiddenFiles:]"
+                  moduleName = "FTPKit Tests"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/djhan/repos/FTPKit/FTPKit/FTPClient.m"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "181"
+                  endingLineNumber = "181"
+                  offsetFromSymbolStart = "441">
+               </Location>
+               <Location
+                  uuid = "D9711641-0971-435A-8957-B6064E54DD11 - 3334864ff30673cc"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "-[FTPClient listContentsAtHandle:showHiddenFiles:]"
+                  moduleName = "FTPKit Tests"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/djhan/repos/FTPKit/FTPKit/FTPClient.m"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "181"
+                  endingLineNumber = "181"
+                  offsetFromSymbolStart = "513">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "4D8D667D-BF94-4A3F-9EE0-8B1F17421B08"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FTPKit/FTPClient.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "188"
+            endingLineNumber = "188"
+            landmarkName = "-listContentsAtHandle:showHiddenFiles:"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "4D8D667D-BF94-4A3F-9EE0-8B1F17421B08 - 3334864ff30670e7"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "-[FTPClient listContentsAtHandle:showHiddenFiles:]"
+                  moduleName = "FTPKit Tests"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/djhan/repos/FTPKit/FTPKit/FTPClient.m"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "188"
+                  endingLineNumber = "188"
+                  offsetFromSymbolStart = "768">
+               </Location>
+               <Location
+                  uuid = "4D8D667D-BF94-4A3F-9EE0-8B1F17421B08 - 3334864ff30670e7"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "-[FTPClient listContentsAtHandle:showHiddenFiles:]"
+                  moduleName = "FTPKit Tests"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/djhan/repos/FTPKit/FTPKit/FTPClient.m"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "188"
+                  endingLineNumber = "188"
+                  offsetFromSymbolStart = "789">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "A4F315D5-C25D-4152-9BC8-DA7800FF8319"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FTPKit Tests/FTPKit_Tests.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "55"
+            endingLineNumber = "55"
+            landmarkName = "-testFtp"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "F1FC2BDB-9B11-4563-9951-62C8A050FA7B"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FTPKit/FTPClient.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "162"
+            endingLineNumber = "162"
+            landmarkName = "-getListContentsAtHandle:showHiddenFiles:"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "6D67A7FF-F862-4750-971A-FCDD488271C1"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FTPKit Tests/FTPKit_Tests.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "51"
+            endingLineNumber = "51"
+            landmarkName = "-testFtp"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "C9E8FAA1-4C51-4AD0-A622-0CD06D0F5744"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Libraries/include/ftplib/src/ftplib.c"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1422"
+            endingLineNumber = "1422"
+            landmarkName = "FtpXfer(localfile, path, nControl, typ, mode)"
+            landmarkType = "9">
+            <Locations>
+               <Location
+                  uuid = "C9E8FAA1-4C51-4AD0-A622-0CD06D0F5744 - 34b5b212b0712f36"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "FtpXfer"
+                  moduleName = "FTPKit Tests"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/djhan/repos/FTPKit/Libraries/include/ftplib/src/ftplib.c"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "1422"
+                  endingLineNumber = "1422"
+                  offsetFromSymbolStart = "184">
+               </Location>
+               <Location
+                  uuid = "C9E8FAA1-4C51-4AD0-A622-0CD06D0F5744 - 34b5b212b0712f36"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "FtpXfer"
+                  moduleName = "FTPKit Tests"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/djhan/repos/FTPKit/Libraries/include/ftplib/src/ftplib.c"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "1422"
+                  endingLineNumber = "1422"
+                  offsetFromSymbolStart = "194">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "9C0BEAB5-F37B-49F4-A9CF-BC3626538C26"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FTPKit/FTPClient.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "164"
+            endingLineNumber = "164"
+            landmarkName = "-getListContentsAtHandle:showHiddenFiles:"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
+</Bucket>

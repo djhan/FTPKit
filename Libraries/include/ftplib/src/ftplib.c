@@ -388,7 +388,7 @@ static int readline(char *buf, int max, netbuf *ctl)
             x = (max >= ctl->cavail) ? ctl->cavail : max-1;
             end = memccpy(bp,ctl->cget,'\n',x);
             if (end != NULL)
-                x = end - bp;
+                x = (int)(end - bp);
             retval += x;
             bp += x;
             *bp = '\0';
@@ -1389,12 +1389,12 @@ GLOBALDEF int FtpPwd(char *path, int max, netbuf *nControl)
     return 1;
 }
 
-/*
+/**
  * FtpXfer - issue a command and transfer data
  *
- * return 1 if successful, 0 otherwise
+ * @return 1 if successful, 0 otherwise
  */
-static int FtpXfer(/*const*/ char *localfile, const char *path,
+static int FtpXfer(const char *localfile, const char *path,
         netbuf *nControl, int typ, int mode)
 {
     int l,c;
@@ -1413,14 +1413,12 @@ static int FtpXfer(/*const*/ char *localfile, const char *path,
             ac[0] = 'w';
         if (mode == FTPLIB_IMAGE)
             ac[1] = 'b';
-        if (mode == FTPLIB_FILE_WRITE) {
-            local = fopen(localfile, ac);
-            if (local == NULL)
-            {
-                strncpy(nControl->response, strerror(errno),
-                        sizeof(nControl->response));
-                return 0;
-            }
+        local = fopen(localfile, ac);
+        if (local == NULL)
+        {
+            strncpy(nControl->response, strerror(errno),
+                    sizeof(nControl->response));
+            return 0;
         }
     }
     if (local == NULL)
@@ -1438,7 +1436,7 @@ static int FtpXfer(/*const*/ char *localfile, const char *path,
     dbuf = malloc(FTPLIB_BUFSIZ);
     if (typ == FTPLIB_FILE_WRITE)
     {
-        while ((l = fread(dbuf, 1, FTPLIB_BUFSIZ, local)) > 0)
+        while ((l = (int)fread(dbuf, 1, FTPLIB_BUFSIZ, local)) > 0)
         {
             if ((c = FtpWrite(dbuf, l, nData)) < l)
             {
@@ -1452,37 +1450,70 @@ static int FtpXfer(/*const*/ char *localfile, const char *path,
     {
         while ((l = FtpRead(dbuf, FTPLIB_BUFSIZ, nData)) > 0)
         {
-            if (mode == FTPLIB_FILE_WRITE) {
-                if (fwrite(dbuf, 1, l, local) == 0)
-                {
-                    if (ftplib_debug)
-                        perror("localfile write");
-                    rv = 0;
-                    break;
-                }
-            }
-            else {
-                if (strcat(localfile, dbuf) == NULL)
-                {
-                    if (ftplib_debug)
-                        perror("data write error");
-                    rv = 0;
-                    break;                
-                }
+            if (fwrite(dbuf, 1, l, local) == 0)
+            {
+                if (ftplib_debug)
+                    perror("localfile write");
+                rv = 0;
+                break;
             }
         }
     }
     free(dbuf);
-    if (mode == FTPLIB_FILE_WRITE) {
-        fflush(local);
-        if (localfile != NULL) {
-            fclose(local);
-        }
+    fflush(local);
+    if (localfile != NULL) {
+        fclose(local);
     }
     FtpClose(nData);
     return rv;
 }
+/**
+ * 커맨드를 전송, 데이터를 포인터로 반환하는 메쏘드
+ *
+ * 읽기 전용 메쏘드
+ *
+ * @return 1 if successful, 0 otherwise
+ */
+static int FtpXferReadData(char *bufferData, const char *path,
+        netbuf *nControl, int typ, int mode)
+{
+    int l;
+    char *dbuf;
+    netbuf *nData;
+    int rv=1;
 
+    if (bufferData != NULL)
+    {
+        char ac[4];
+        memset( ac, 0, sizeof(ac) );
+        // 쓰기 타입은 중지 처리
+        if (typ == FTPLIB_FILE_WRITE)
+            return 0;
+        else
+            ac[0] = 'w';
+        if (mode == FTPLIB_IMAGE)
+            ac[1] = 'b';
+    }
+
+    if (!FtpAccess(path, typ, mode, nControl, &nData))
+    {
+        return 0;
+    }
+    dbuf = malloc(FTPLIB_BUFSIZ);
+    while ((l = FtpRead(dbuf, FTPLIB_BUFSIZ, nData)) > 0)
+    {
+        if (strcat(bufferData, dbuf) == NULL)
+        {
+            if (ftplib_debug)
+                perror("data write error");
+            rv = 0;
+            break;
+        }
+    }
+    free(dbuf);
+    FtpClose(nData);
+    return rv;
+}
 /*
  * FtpNlst - issue an NLST command and write response to output
  *
@@ -1499,9 +1530,24 @@ GLOBALDEF int FtpNlst(const char *outputfile, const char *path,
  *
  * return 1 if successful, 0 otherwise
  */
-GLOBALDEF int FtpDir(/*const*/ char *outputfile, const char *path, netbuf *nControl)
+GLOBALDEF int FtpDir(const char *outputfile, const char *path, netbuf *nControl)
 {
     return FtpXfer(outputfile, path, nControl, FTPLIB_DIR_VERBOSE, FTPLIB_ASCII);
+}
+
+/**
+ * FtpDirData
+ *
+ * LIST command 전송, 결과를 Data 포인터로 쓴다
+ *
+ * @return 1 if successful, 0 otherwise
+ * @param bufferData: 결과를 쓸 포인터
+ * @param path: FTP 경로
+ * @param nControl: 접속할 FTP 주소/정보가 격납된 netbuf 포인터
+ */
+GLOBALDEF int FtpDirData(char *bufferData, const char *path, netbuf *nControl)
+{
+    return FtpXferReadData(bufferData, path, nControl, FTPLIB_DIR_VERBOSE, FTPLIB_ASCII);
 }
 
 /*

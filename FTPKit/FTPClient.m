@@ -155,21 +155,25 @@
         return nil;
     const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:NSUTF8StringEncoding];
     // 리스트 결과값 초기화
-    char *result = strdup("");
-    int stat = FtpDir(result, path, conn);
+    char *bufferData = strdup("");
+    int stat = FtpDirData(bufferData, path, conn);
     NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
     if (stat == 0) {
         self.lastError = [NSError FTPKitErrorWithResponse:response];
+        // 리스트 결과값을 해제 (반드시 필요)
+        free(bufferData);
         return nil;
     }
-    if (strlen(result) == 0) {
+    if (strlen(bufferData) == 0) {
         self.lastError = [NSError FTPKitErrorWithResponse:response];
+        // 리스트 결과값을 해제 (반드시 필요)
+        free(bufferData);
         return nil;
     }
     // 데이터 초기화
-    NSData *data = [[NSData alloc] initWithBytes:result length:strlen(result)];
+    NSData *data = [[NSData alloc] initWithBytes:bufferData length:strlen(bufferData)];
     // 리스트 결과값을 해제 (반드시 필요)
-    free(result);
+    free(bufferData);
     NSArray *files = [self parseListData:data handle:handle showHiddentFiles:showHiddenFiles];
     return files;
 }

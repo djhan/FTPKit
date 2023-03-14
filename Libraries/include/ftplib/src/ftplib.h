@@ -39,7 +39,8 @@
 #define FTPLIB_DIR 1
 #define FTPLIB_DIR_VERBOSE 2
 #define FTPLIB_FILE_READ 3
-#define FTPLIB_FILE_WRITE 4
+#define FTPLIB_FILE_READ_FROM 4
+#define FTPLIB_FILE_WRITE 5
 
 /* FtpAccess() mode codes */
 #define FTPLIB_ASCII 'A'
@@ -86,7 +87,7 @@ GLOBALREF int FtpOptions(int opt, long val, netbuf *nControl);
 GLOBALREF int FtpSetCallback(const FtpCallbackOptions *opt, netbuf *nControl);
 GLOBALREF int FtpClearCallback(netbuf *nControl);
 GLOBALREF int FtpLogin(const char *user, const char *pass, netbuf *nControl);
-GLOBALREF int FtpAccess(const char *path, int typ, int mode, netbuf *nControl, netbuf **nData);
+GLOBALREF int FtpAccess(const char *path, int typ, int mode, long long int position, netbuf *nControl, netbuf **nData);
 GLOBALREF int FtpRead(void *buf, int max, netbuf *nData);
 GLOBALREF int FtpWrite(const void *buf, int len, netbuf *nData);
 GLOBALREF int FtpClose(netbuf *nData);

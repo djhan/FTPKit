@@ -1090,8 +1090,8 @@ static int FtpAcceptConnection(netbuf *nData, netbuf *nControl)
  *
  * return 1 if successful, 0 otherwise
  */
-GLOBALDEF int FtpAccess(const char *path, int typ, int mode, netbuf *nControl,
-    netbuf **nData)
+GLOBALDEF int FtpAccess(const char *path, int typ, int mode, long long int position,
+                        netbuf *nControl, netbuf **nData)
 {
     char buf[TMP_BUFSIZ];
     int dir;
@@ -1117,6 +1117,10 @@ GLOBALDEF int FtpAccess(const char *path, int typ, int mode, netbuf *nControl,
         break;
       case FTPLIB_FILE_READ:
         strcpy(buf,"RETR");
+        dir = FTPLIB_READ;
+        break;
+      case FTPLIB_FILE_READ_FROM:
+        sprintf(buf, "REST %lld\r\nRETR", position);
         dir = FTPLIB_READ;
         break;
       case FTPLIB_FILE_WRITE:
@@ -1423,7 +1427,7 @@ static int FtpXfer(const char *localfile, const char *path,
     }
     if (local == NULL)
         local = (typ == FTPLIB_FILE_WRITE) ? stdin : stdout;
-    if (!FtpAccess(path, typ, mode, nControl, &nData))
+    if (!FtpAccess(path, typ, mode, 0, nControl, &nData))
     {
         if (localfile)
         {
@@ -1495,7 +1499,7 @@ static int FtpXferReadData(char *bufferData, const char *path,
             ac[1] = 'b';
     }
 
-    if (!FtpAccess(path, typ, mode, nControl, &nData))
+    if (!FtpAccess(path, typ, mode, 0, nControl, &nData))
     {
         return 0;
     }

@@ -154,13 +154,15 @@
     if (conn == NULL)
         return nil;
     const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:NSUTF8StringEncoding];
-    NSMutableData *data = [[NSMutableData alloc] init];
-    int stat = FtpDir((char *)[data mutableBytes], path, conn);
+    NSMutableData *bytesData = [[NSMutableData alloc] init];
+    int stat = FtpDir((char *)[bytesData mutableBytes], path, conn);
     NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
     if (stat == 0) {
         self.lastError = [NSError FTPKitErrorWithResponse:response];
         return nil;
     }
+    char *bytes = [bytesData mutableBytes];
+    NSData *data = [NSData dataWithBytes:bytes length:strlen(bytes)];
     NSArray *files = [self parseListData:data handle:handle showHiddentFiles:showHiddenFiles];
     return files;
 }
@@ -558,7 +560,7 @@
     NSString *newName = nil;
     NSString *name = [entry objectForKey:(id)kCFFTPResourceName];
     if (name != nil) {
-        NSData *data = [name dataUsingEncoding:NSMacOSRomanStringEncoding];
+        NSData *data = [name dataUsingEncoding:NSUTF8StringEncoding]; //NSMacOSRomanStringEncoding];
         if (data != nil) {
             newName = [[NSString alloc] initWithData:data encoding:newEncoding];
         }

@@ -99,7 +99,7 @@ GLOBALREF int FtpCDUp(netbuf *nControl);
 GLOBALREF int FtpRmdir(const char *path, netbuf *nControl);
 GLOBALREF int FtpPwd(char *path, int max, netbuf *nControl);
 GLOBALREF int FtpNlst(const char *output, const char *path, netbuf *nControl);
-GLOBALREF int FtpDir(const char *output, const char *path, netbuf *nControl);
+GLOBALREF int FtpDir(/*const*/ char *output, const char *path, netbuf *nControl);
 GLOBALREF int FtpSize(const char *path, unsigned int *size, char mode, netbuf *nControl);
 #if defined(__UINT64_MAX)
 GLOBALREF int FtpSizeLong(const char *path, fsz_t *size, char mode, netbuf *nControl);

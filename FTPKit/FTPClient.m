@@ -155,7 +155,7 @@
         return nil;
     const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:NSUTF8StringEncoding];
     NSMutableData *data = [[NSMutableData alloc] init];
-    int stat = FtpDir((const void *)[data bytes], path, conn);
+    int stat = FtpDir((char *)[data bytes], path, conn);
     NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
     if (stat == 0) {
         self.lastError = [NSError FTPKitErrorWithResponse:response];

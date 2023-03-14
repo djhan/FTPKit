@@ -1394,7 +1394,7 @@ GLOBALDEF int FtpPwd(char *path, int max, netbuf *nControl)
  *
  * return 1 if successful, 0 otherwise
  */
-static int FtpXfer(const char *localfile, const char *path,
+static int FtpXfer(/*const*/ char *localfile, const char *path,
         netbuf *nControl, int typ, int mode)
 {
     int l,c;
@@ -1421,9 +1421,6 @@ static int FtpXfer(const char *localfile, const char *path,
                         sizeof(nControl->response));
                 return 0;
             }
-        }
-        else {
-            local = localfile;
         }
     }
     if (local == NULL)
@@ -1465,7 +1462,7 @@ static int FtpXfer(const char *localfile, const char *path,
                 }
             }
             else {
-                if (strcat(local, dbuf) == NULL)
+                if (strcat(localfile, dbuf) == NULL)
                 {
                     if (ftplib_debug)
                         perror("data write error");
@@ -1476,9 +1473,12 @@ static int FtpXfer(const char *localfile, const char *path,
         }
     }
     free(dbuf);
-    fflush(local);
-    if (localfile != NULL)
-        fclose(local);
+    if (mode == FTPLIB_FILE_WRITE) {
+        fflush(local);
+        if (localfile != NULL) {
+            fclose(local);
+        }
+    }
     FtpClose(nData);
     return rv;
 }
@@ -1499,7 +1499,7 @@ GLOBALDEF int FtpNlst(const char *outputfile, const char *path,
  *
  * return 1 if successful, 0 otherwise
  */
-GLOBALDEF int FtpDir(const char *outputfile, const char *path, netbuf *nControl)
+GLOBALDEF int FtpDir(/*const*/ char *outputfile, const char *path, netbuf *nControl)
 {
     return FtpXfer(outputfile, path, nControl, FTPLIB_DIR_VERBOSE, FTPLIB_ASCII);
 }

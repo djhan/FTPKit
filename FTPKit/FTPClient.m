@@ -660,7 +660,6 @@
     if ([listString length] == 0) {
         return nil;
     }
-    // 라인피드로 분할 처리
     NSArray *lists = [listString componentsSeparatedByString:@"\n"];
     if ([lists count] == 0) {
         return nil;

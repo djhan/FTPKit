@@ -1481,13 +1481,20 @@ static int FtpXfer(const char *localfile, const char *path,
  *
  * @return 1 if successful, 0 otherwise
  */
-static int FtpXferReadData(char *bufferData, const char *path,
+static int FtpXferReadData(char **bufferData, const char *path,
                            netbuf *nControl, int typ, int mode)
 {
     int l;
     char *dbuf;
     netbuf *nData;
     int rv=1;
+    
+    // Directory 읽기인 경우
+    // bufferData가 초기화되지 않은 경우, 초기화
+    if (typ == FTPLIB_DIR_VERBOSE &&
+        *bufferData == NULL) {
+        *bufferData = (char *)malloc(sizeof(char) * FTPLIB_DIR_LENGTH);
+    }
     
     if (!FtpAccess(path, typ, mode, 0, nControl, &nData))
     {
@@ -1496,7 +1503,28 @@ static int FtpXferReadData(char *bufferData, const char *path,
     dbuf = malloc(FTPLIB_BUFSIZ);
     while ((l = FtpRead(dbuf, FTPLIB_BUFSIZ, nData)) > 0)
     {
-        if (strcat(bufferData, dbuf) == NULL)
+        // Directory 읽기인 경우
+        if (typ == FTPLIB_DIR_VERBOSE) {
+            long long int bufferLength = strlen(*bufferData);
+            long long int dbufLength = strlen(dbuf);
+            // 현재 bufferData 에 dbuf를 추가한 경우, 메모리 증가가 필요한지 여부를 확인
+            int multiple = ((int)(bufferLength + dbufLength) / FTPLIB_DIR_LENGTH) + 1;
+            if (bufferLength < multiple * FTPLIB_DIR_LENGTH) {
+                // 메모리 증대 필요시
+                // realloc 실행
+                // https://woo-dev.tistory.com/124
+                char *tempBuffer = *bufferData;
+                *bufferData = (char *)realloc(*bufferData, multiple * FTPLIB_DIR_LENGTH);
+                if (bufferData == NULL) {
+                    // 실패시 기존 포인터를 해제하고 중지 처리
+                    free(tempBuffer);
+                    break;
+                }
+            }
+        }
+        
+        // bufferData에 dbuf를 추가
+        if (strcat(*bufferData, dbuf) == NULL)
         {
             if (ftplib_debug)
                 perror("data read error");
@@ -1535,14 +1563,15 @@ GLOBALDEF int FtpDir(const char *outputfile, const char *path, netbuf *nControl)
  * LIST command 전송, 결과를 Data 포인터로 쓴다
  *
  * @return 1 if successful, 0 otherwise
- * @param bufferData: 결과를 쓸 포인터
+ * @param bufferData: 결과를 쓸 이중 포인터
  * @param path: FTP 경로
  * @param nControl: 접속할 FTP 주소/정보가 격납된 netbuf 포인터
  */
-GLOBALDEF int FtpDirData(char *bufferData, const char *path, netbuf *nControl)
+GLOBALDEF int FtpDirData(char **bufferData, const char *path, netbuf *nControl)
 {
     return FtpXferReadData(bufferData, path, nControl, FTPLIB_DIR_VERBOSE, FTPLIB_ASCII);
 }
+
 /**
  * FtpDirParsed
  *
@@ -1553,7 +1582,8 @@ GLOBALDEF int FtpDirData(char *bufferData, const char *path, netbuf *nControl)
  * @param path: FTP 경로
  * @param nControl: 접속할 FTP 주소/정보가 격납된 netbuf 포인터
  */
-GLOBALDEF int FtpDirDataParsed(char *bufferData, const char *path, netbuf *nControl)
+/*
+GLOBALDEF int FtpDirDataParsed(char **bufferData, const char *path, netbuf *nControl)
 {
     int result = FtpXferReadData(bufferData, path, nControl, FTPLIB_DIR_VERBOSE, FTPLIB_ASCII);
     if (result == 0) {
@@ -1562,7 +1592,7 @@ GLOBALDEF int FtpDirDataParsed(char *bufferData, const char *path, netbuf *nCont
     }
     
     char *line = NULL;
-    line = strtok(bufferData, "\r\n");
+    line = strtok(*bufferData, "\r\n");
     while (line != NULL)
     {
         printf("%s\n", line);
@@ -1576,7 +1606,7 @@ GLOBALDEF int FtpDirDataParsed(char *bufferData, const char *path, netbuf *nCont
         line = strtok(NULL, "\r\n");
     }
     return result;
-}
+}*/
 
 /*
  * FtpSize - determine the size of a remote file

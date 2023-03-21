@@ -13,6 +13,28 @@
 #import "FTPHandle.h"
 #import "FTPCredentials.h"
 
+
+// MARK: - FTPItem Class -
+/**
+ FTPItem Class
+ */
+@class FTPItem;
+@interface FTPItem : NSObject
+
+/// 파일명
+@property (atomic) NSString *filename;
+/// 디렉토리 여부
+@property (nonatomic) bool isDir;
+/// 감춤 파일 여부
+@property (nonatomic) bool isHidden;
+/// 크기
+@property (nonatomic) long int size;
+/// 수정일
+@property (atomic) NSDate *modificationDate;
+@end
+
+
+// MARK: - FTPClient Class -
 @class FTPClient;
 
 @protocol FTPRequestDelegate;
@@ -43,11 +65,16 @@
  
  @param host Server host to connect to
  @param port Server port.
+ @param encoding Server encoding.
  @param username Username to login as.
  @param password Password of user.
  @return FTPClient
  */
-+ (instancetype)clientWithHost:(NSString *)host port:(int)port username:(NSString *)username password:(NSString* )password;
++ (instancetype)clientWithHost:(NSString *)host
+                          port:(int)port
+                      encoding:(int)encoding
+                      username:(NSString *)username
+                      password:(NSString* )password;
 
 /**
  Create an instance of FTPClient.
@@ -62,11 +89,16 @@
  
  @param host Server host to connect to.
  @param port Server port.
+ @param encoding Server encoding.
  @param username Username to login as.
  @param password Password of user.
  @return FTPClient
  */
-- (instancetype)initWithHost:(NSString *)host port:(int)port username:(NSString *)username password:(NSString* )password;
+- (instancetype)initWithHost:(NSString *)host
+                        port:(int)port
+                    encoding:(int)encoding
+                    username:(NSString *)username
+                    password:(NSString* )password;
 
 /**
  Get the size, in bytes, for remote file at 'path'. This can not be used
@@ -492,3 +524,4 @@
 - (NSString *)printWorkingDirectory;
 
 @end
+

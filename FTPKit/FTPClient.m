@@ -1,8 +1,46 @@
 #import "ftplib.h"
+#import "ftpparse.h"
 #import "FTPKit+Protected.h"
 #import "FTPClient.h"
 #import "NSError+Additions.h"
 
+// MARK: - FTPItem Class -
+/**
+ FTPItem Class
+ */
+@implementation FTPItem
+/**
+ 초기화
+ @param filename    파일명
+ @param isDir       디렉토리 여부
+ @param isHidden    감춤 파일 여부
+ @param size        파일 크기
+ @param date        수정일
+ */
+- (instancetype)initWithFilename:(NSString *)filename
+                           isDir:(bool)isDir
+                        isHidden:(bool)isHidden
+                            size:(long int)size
+                modificationDate:(NSDate *)modificationDate
+{
+    self = [super init];
+    if (self ) {
+        _filename = filename;
+        _isDir = isDir;
+        _isHidden = isHidden;
+        _size = size;
+        _modificationDate = modificationDate;
+    }
+    return self;
+}
+
+@end
+
+
+// MARK: - FTPClient Class -
+/**
+ FTPClient Class
+ */
 @interface FTPClient ()
 
 @property (nonatomic, strong) FTPCredentials* credentials;
@@ -12,6 +50,9 @@
 
 /** The last error encountered. */
 @property (nonatomic, strong) NSError *lastError;
+
+/** NSString Encoding */
+@property (nonatomic) int encoding;
 
 /**
  Create connection to FTP server.
@@ -83,9 +124,13 @@
 	return [[self alloc] initWithCredentials:credentials];
 }
 
-+ (instancetype)clientWithHost:(NSString *)host port:(int)port username:(NSString *)username password:(NSString *)password
++ (instancetype)clientWithHost:(NSString *)host
+                          port:(int)port
+                      encoding:(int)encoding
+                      username:(NSString *)username
+                      password:(NSString *)password
 {
-	return [[self alloc] initWithHost:host port:port username:username password:password];
+    return [[self alloc] initWithHost:host port:port encoding:encoding username:username password:password];
 }
 
 - (instancetype)initWithCredentials:(FTPCredentials *)aLocation
@@ -98,9 +143,14 @@
 	return self;
 }
 
-- (instancetype)initWithHost:(NSString *)host port:(int)port username:(NSString *)username password:(NSString *)password
+- (instancetype)initWithHost:(NSString *)host
+                        port:(int)port
+                    encoding:(int)encoding
+                    username:(NSString *)username
+                    password:(NSString *)password
 {
     FTPCredentials *creds = [FTPCredentials credentialsWithHost:host port:port username:username password:password];
+    _encoding = encoding;
 	return [self initWithCredentials:creds];
 }
 
@@ -157,9 +207,8 @@
     const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:NSUTF8StringEncoding];
     // 리스트 결과값 초기화
     printf("int max = %i", INT_MAX);
-    char *bufferData = (char *)malloc(sizeof(char) * FTPLIB_DIR_LENGTH);
-    //int stat = FtpDirData(bufferData, path, conn);
-    int stat = FtpDirDataParsed(bufferData, path, conn);
+    char *bufferData = NULL;
+    int stat = FtpDirData(&bufferData, path, conn);
     NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
     FtpQuit(conn);
     if (stat == 0 ||
@@ -177,7 +226,7 @@
     if (bufferData != NULL) {
         free(bufferData);
     }
-    NSArray *files = [self parseListData:data handle:handle showHiddentFiles:showHiddenFiles];
+    NSArray *files = [self parseListData:data showHiddentFiles:showHiddenFiles];
     return files;
 }
 
@@ -592,6 +641,66 @@
         result = newEntry;
     }
     return result;
+}
+
+/**
+ `NSData` 기반으로 파싱 실행
+ @param data 파싱할 데이터
+ @param showHiddenFiles 감춤 파일 표시 여부
+ @returns `FTPItem` 배열로 반환
+ */
+- (NSArray<FTPItem *> *)parseListData:(NSData *)data showHiddentFiles:(BOOL)showHiddenFiles
+{
+    if (data == NULL ||
+        [data length] == 0) {
+        return nil;
+    }
+    
+    NSString *listString = [[NSString alloc] initWithData:data encoding:_encoding];
+    if ([listString length] == 0) {
+        return nil;
+    }
+    // 라인피드로 분할 처리
+    NSArray *lists = [listString componentsSeparatedByString:@"\n"];
+    if ([lists count] == 0) {
+        return nil;
+    }
+    
+    NSMutableArray<FTPItem *> *parsedLists = [[NSMutableArray alloc] init];
+    for (NSInteger i = 0; i < [lists count]; i++) {
+        NSString *originLine = lists[i];
+        if ([originLine length] == 0) {
+            continue;
+        }
+        char *charLine = (char *)[originLine UTF8String];
+        struct ftpparse *parsed = malloc(sizeof(struct ftpparse));
+        int result = ftpparse(parsed, charLine, (int)strlen(charLine));
+        // 파일명 발견시
+        if (result == 1) {
+            NSString *filename = [NSString stringWithCString:parsed->name encoding:_encoding];
+            bool isDir = parsed->flagtrycwd;
+            long int size = parsed->size;
+            NSDate *modificationDate = [NSDate dateWithTimeIntervalSince1970:parsed->mtime];
+            bool isHidden;
+            if ([filename hasPrefix:@"."] == true) {
+                isHidden = true;
+            }
+            else {
+                isHidden = false;
+            }
+            FTPItem *item = [[FTPItem alloc] initWithFilename:filename
+                                                        isDir:isDir
+                                                     isHidden:isHidden
+                                                         size:size
+                                             modificationDate:modificationDate];
+            if (item != NULL) {
+                [parsedLists addObject:item];
+            }
+        }
+        // parse 해제
+        free(parsed);
+    }
+    return parsedLists;
 }
 
 - (NSArray *)parseListData:(NSData *)data handle:(FTPHandle *)handle showHiddentFiles:(BOOL)showHiddenFiles

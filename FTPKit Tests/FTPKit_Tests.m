@@ -40,7 +40,11 @@
 
 - (void)testFtp
 {
-    FTPClient * ftp = [[FTPClient alloc] initWithHost:@"djhan.asuscomm.com" port:21 username:@"djhan" password:@"shakamuth837"];
+    FTPClient * ftp = [[FTPClient alloc] initWithHost:@"djhan.asuscomm.com"
+                                                 port:21
+                                             encoding: NSUTF8StringEncoding
+                                             username:@"djhan"
+                                             password:@"shakamuth837"];
     
     // Sanity. Make sure the root path exists. This should always be true.
     BOOL success = [ftp directoryExistsAtPath:@"/"];

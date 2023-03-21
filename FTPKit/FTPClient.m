@@ -17,11 +17,11 @@
  @param size        파일 크기
  @param date        수정일
  */
-- (instancetype)initWithFilename:(NSString *)filename
+- (instancetype)initWithFilename:(nonnull NSString *)filename
                            isDir:(bool)isDir
                         isHidden:(bool)isHidden
                             size:(long int)size
-                modificationDate:(NSDate *)modificationDate
+                modificationDate:(nullable NSDate *)modificationDate
 {
     self = [super init];
     if (self ) {
@@ -220,13 +220,11 @@
         }
         return nil;
     }
-    // 데이터 초기화
-    NSData *data = [[NSData alloc] initWithBytes:bufferData length:strlen(bufferData)];
+    NSArray *files = [self parseList:bufferData showHiddentFiles:showHiddenFiles];
     // 리스트 결과값을 해제 (반드시 필요)
     if (bufferData != NULL) {
         free(bufferData);
     }
-    NSArray *files = [self parseListData:data showHiddentFiles:showHiddenFiles];
     return files;
 }
 
@@ -644,19 +642,19 @@
 }
 
 /**
- `NSData` 기반으로 파싱 실행
- @param data 파싱할 데이터
+ `char` 포인터 기반으로 파싱 실행
+ @param char 파싱할 char 포인터
  @param showHiddenFiles 감춤 파일 표시 여부
  @returns `FTPItem` 배열로 반환
  */
-- (NSArray<FTPItem *> *)parseListData:(NSData *)data showHiddentFiles:(BOOL)showHiddenFiles
+- (NSArray<FTPItem *> *)parseList:(char *)bufferData showHiddentFiles:(BOOL)showHiddenFiles
 {
-    if (data == NULL ||
-        [data length] == 0) {
+    if (bufferData == NULL ||
+        strlen(bufferData) == 0) {
         return nil;
     }
     
-    NSString *listString = [[NSString alloc] initWithData:data encoding:_encoding];
+    NSString *listString = [[NSString alloc] initWithCString:bufferData encoding:_encoding];
     if ([listString length] == 0) {
         return nil;
     }
@@ -679,7 +677,10 @@
             NSString *filename = [NSString stringWithCString:parsed->name encoding:_encoding];
             bool isDir = parsed->flagtrycwd;
             long int size = parsed->size;
-            NSDate *modificationDate = [NSDate dateWithTimeIntervalSince1970:parsed->mtime];
+            NSDate *modificationDate = NULL;
+            if (parsed->mtime != 0) {
+                [NSDate dateWithTimeIntervalSince1970:parsed->mtime];
+            }
             bool isHidden;
             if ([filename hasPrefix:@"."] == true) {
                 isHidden = true;

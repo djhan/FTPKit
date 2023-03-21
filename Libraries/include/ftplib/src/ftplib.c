@@ -1484,7 +1484,7 @@ static int FtpXfer(const char *localfile, const char *path,
 static int FtpXferReadData(char **bufferData, const char *path,
                            netbuf *nControl, int typ, int mode)
 {
-    int l;
+    //int l;
     char *dbuf;
     netbuf *nData;
     int rv=1;
@@ -1501,7 +1501,8 @@ static int FtpXferReadData(char **bufferData, const char *path,
         return 0;
     }
     dbuf = malloc(FTPLIB_BUFSIZ);
-    while ((l = FtpRead(dbuf, FTPLIB_BUFSIZ, nData)) > 0)
+    //while ((l = FtpRead(dbuf, FTPLIB_BUFSIZ, nData)) > 0)
+    while ((FtpRead(dbuf, FTPLIB_BUFSIZ, nData)) > 0)
     {
         // Directory 읽기인 경우
         if (typ == FTPLIB_DIR_VERBOSE) {

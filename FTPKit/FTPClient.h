@@ -22,7 +22,7 @@
 @interface FTPItem : NSObject
 
 /// 파일명
-@property (atomic) NSString *filename;
+@property (atomic) NSString * _Nonnull filename;
 /// 디렉토리 여부
 @property (nonatomic) bool isDir;
 /// 감춤 파일 여부
@@ -30,7 +30,7 @@
 /// 크기
 @property (nonatomic) long int size;
 /// 수정일
-@property (atomic) NSDate *modificationDate;
+@property (atomic) NSDate * _Nullable modificationDate;
 @end
 
 

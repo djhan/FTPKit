@@ -674,19 +674,26 @@
         int result = ftpparse(parsed, charLine, (int)strlen(charLine));
         // 파일명 발견시
         if (result == 1) {
+
             NSString *filename = [NSString stringWithCString:parsed->name encoding:_encoding];
-            bool isDir = parsed->flagtrycwd;
-            long int size = parsed->size;
-            NSDate *modificationDate = NULL;
-            if (parsed->mtime != 0) {
-                [NSDate dateWithTimeIntervalSince1970:parsed->mtime];
-            }
             bool isHidden;
             if ([filename hasPrefix:@"."] == true) {
                 isHidden = true;
             }
             else {
                 isHidden = false;
+            }
+            // showHiddenFiles == false 인데 감춤 파일인 경우 건너뛴다
+            if (showHiddenFiles == false && isHidden == true) {
+                continue;
+            }
+
+            // 추가 필요시
+            bool isDir = parsed->flagtrycwd;
+            long int size = parsed->size;
+            NSDate *modificationDate = NULL;
+            if (parsed->mtime != 0) {
+                [NSDate dateWithTimeIntervalSince1970:parsed->mtime];
             }
             FTPItem *item = [[FTPItem alloc] initWithFilename:filename
                                                         isDir:isDir

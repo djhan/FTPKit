@@ -106,7 +106,8 @@
 
 - (NSString *)urlEncode:(NSString *)path
 {
-    return [path stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    return [path stringByRemovingPercentEncoding];
+    //return [path stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
 }
 
 - (long long int)fileSizeAtPath:(NSString *)path
@@ -156,7 +157,7 @@
     const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:NSUTF8StringEncoding];
     // 리스트 결과값 초기화
     printf("int max = %i", INT_MAX);
-    char *bufferData = (char *)malloc(sizeof(char) * 65536);
+    char *bufferData = (char *)malloc(sizeof(char) * FTPLIB_DIR_LENGTH);
     //int stat = FtpDirData(bufferData, path, conn);
     int stat = FtpDirDataParsed(bufferData, path, conn);
     NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];

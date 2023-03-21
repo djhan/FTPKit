@@ -49,12 +49,12 @@
     //NSLog(@"Privates 리스팅");
     //NSArray *contents = [ftp listContentsAtPath:@"/0.Privates" showHiddenFiles:YES];
     NSArray *contents = [ftp getListContentsAtPath:@"/0.Privates" showHiddenFiles:YES];
-    //XCTAssertNil(contents, @"Directory should not exist");
-    //XCTAssertEqual(0, contents.count, @"");
+    XCTAssertNil(contents, @"Directory should not exist");
+    XCTAssertEqual(0, contents.count, @"");
     
     //NSLog(@"exr.zip 사이즈 확인");
     long long int bytes = [ftp fileSizeAtPath:@"/0.Privates/exr.zip"];
-    //XCTAssertTrue((bytes > 0), @"");
+    XCTAssertTrue((bytes > 0), @"");
     
     return;
 

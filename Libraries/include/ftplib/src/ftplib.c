@@ -79,6 +79,9 @@
 #define FTPLIB_DEFMODE FTPLIB_PASSIVE
 #endif
 
+// FTP Parse 도입
+#import "ftpparse.h"
+
 struct NetBuf {
     char *cput,*cget;
     int handle;
@@ -1485,20 +1488,7 @@ static int FtpXferReadData(char *bufferData, const char *path,
     char *dbuf;
     netbuf *nData;
     int rv=1;
-
-    if (bufferData != NULL)
-    {
-        char ac[4];
-        memset( ac, 0, sizeof(ac) );
-        // 쓰기 타입은 중지 처리
-        if (typ == FTPLIB_FILE_WRITE)
-            return 0;
-        else
-            ac[0] = 'w';
-        if (mode == FTPLIB_IMAGE)
-            ac[1] = 'b';
-    }
-
+    
     if (!FtpAccess(path, typ, mode, 0, nControl, &nData))
     {
         return 0;
@@ -1565,15 +1555,27 @@ GLOBALDEF int FtpDirData(char *bufferData, const char *path, netbuf *nControl)
  */
 GLOBALDEF int FtpDirDataParsed(char *bufferData, const char *path, netbuf *nControl)
 {
-    return FtpXferReadData(bufferData, path, nControl, FTPLIB_DIR_VERBOSE, FTPLIB_ASCII);    
-//    char *line = NULL;
-//    line = strtok(bufferData, "\r\n");
-//    while (line != NULL)
-//    {
-//        printf("%s\n", line);
-//        line = strtok(NULL, "\r\n");
-//    }
-//    return result;
+    int result = FtpXferReadData(bufferData, path, nControl, FTPLIB_DIR_VERBOSE, FTPLIB_ASCII);
+    if (result == 0) {
+        // 실패시 그대로 반환, 종료 처리
+        return result;
+    }
+    
+    char *line = NULL;
+    line = strtok(bufferData, "\r\n");
+    while (line != NULL)
+    {
+        printf("%s\n", line);
+        
+        struct ftpparse *parse = malloc(sizeof(struct ftpparse));
+        if (ftpparse(parse, line, (int)strlen(line)) == 0) {
+            printf("파싱에 실패했습니다\n");
+        }
+        // 메모리 해제
+        free(parse);
+        line = strtok(NULL, "\r\n");
+    }
+    return result;
 }
 
 /*

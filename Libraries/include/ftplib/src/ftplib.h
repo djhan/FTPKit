@@ -59,6 +59,9 @@
 #define FTPLIB_CALLBACKARG 4
 #define FTPLIB_CALLBACKBYTES 5
 
+/* DIR Path Length : 1MB 크기로 맞춘다*/
+#define FTPLIB_DIR_LENGTH 1024 * 1024
+
 #ifdef __cplusplus
 extern "C" {
 #endif

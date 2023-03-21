@@ -112,6 +112,18 @@ GLOBALREF int FtpDir(const char *output, const char *path, netbuf *nControl);
  * @param nControl: 접속할 FTP 주소/정보가 격납된 netbuf 포인터
  */
 GLOBALDEF int FtpDirData(char *bufferData, const char *path, netbuf *nControl);
+/**
+* FtpDirParsed
+*
+* LIST command 전송, 결과를 파싱해서
+* 참고 링크 https://stackoverflow.com/questions/27098332/split-string-by-carriage-return-c
+* @return 1 if successful, 0 otherwise
+* @param bufferData: 결과를 쓸 포인터
+* @param path: FTP 경로
+* @param nControl: 접속할 FTP 주소/정보가 격납된 netbuf 포인터
+*/
+GLOBALDEF int FtpDirDataParsed(char *bufferData, const char *path, netbuf *nControl);
+
 GLOBALREF int FtpSize(const char *path, unsigned int *size, char mode, netbuf *nControl);
 #if defined(__UINT64_MAX)
 GLOBALREF int FtpSizeLong(const char *path, fsz_t *size, char mode, netbuf *nControl);

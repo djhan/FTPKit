@@ -155,25 +155,27 @@
         return nil;
     const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:NSUTF8StringEncoding];
     // 리스트 결과값 초기화
-    char *bufferData = strdup("");
-    int stat = FtpDirData(bufferData, path, conn);
+    printf("int max = %i", INT_MAX);
+    char *bufferData = (char *)malloc(sizeof(char) * 65536);
+    //int stat = FtpDirData(bufferData, path, conn);
+    int stat = FtpDirDataParsed(bufferData, path, conn);
     NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
-    if (stat == 0) {
+    FtpQuit(conn);
+    if (stat == 0 ||
+        strlen(bufferData) == 0) {
         self.lastError = [NSError FTPKitErrorWithResponse:response];
         // 리스트 결과값을 해제 (반드시 필요)
-        free(bufferData);
-        return nil;
-    }
-    if (strlen(bufferData) == 0) {
-        self.lastError = [NSError FTPKitErrorWithResponse:response];
-        // 리스트 결과값을 해제 (반드시 필요)
-        free(bufferData);
+        if (bufferData != NULL) {
+            free(bufferData);
+        }
         return nil;
     }
     // 데이터 초기화
     NSData *data = [[NSData alloc] initWithBytes:bufferData length:strlen(bufferData)];
     // 리스트 결과값을 해제 (반드시 필요)
-    free(bufferData);
+    if (bufferData != NULL) {
+        free(bufferData);
+    }
     NSArray *files = [self parseListData:data handle:handle showHiddentFiles:showHiddenFiles];
     return files;
 }
@@ -658,11 +660,11 @@
 {
     dispatch_async(_queue, ^{
         NSDate *date = [self lastModifiedAtPath:remotePath];
-        if (! _lastError && success) {
+        if (! self->_lastError && success) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 success(date);
             });
-        } else if (_lastError && failure) {
+        } else if (self->_lastError && failure) {
             [self returnFailure:failure];
         }
     });
@@ -717,11 +719,11 @@
 {
     dispatch_async(_queue, ^{
         BOOL exists = [self directoryExistsAtPath:remotePath];
-        if (! _lastError && success) {
+        if (! self->_lastError && success) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 success(exists);
             });
-        } else if (_lastError && failure) {
+        } else if (self->_lastError && failure) {
             [self returnFailure:failure];
         }
     });

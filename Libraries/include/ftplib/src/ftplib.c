@@ -1479,7 +1479,7 @@ static int FtpXfer(const char *localfile, const char *path,
  * @return 1 if successful, 0 otherwise
  */
 static int FtpXferReadData(char *bufferData, const char *path,
-        netbuf *nControl, int typ, int mode)
+                           netbuf *nControl, int typ, int mode)
 {
     int l;
     char *dbuf;
@@ -1509,7 +1509,7 @@ static int FtpXferReadData(char *bufferData, const char *path,
         if (strcat(bufferData, dbuf) == NULL)
         {
             if (ftplib_debug)
-                perror("data write error");
+                perror("data read error");
             rv = 0;
             break;
         }
@@ -1552,6 +1552,28 @@ GLOBALDEF int FtpDir(const char *outputfile, const char *path, netbuf *nControl)
 GLOBALDEF int FtpDirData(char *bufferData, const char *path, netbuf *nControl)
 {
     return FtpXferReadData(bufferData, path, nControl, FTPLIB_DIR_VERBOSE, FTPLIB_ASCII);
+}
+/**
+ * FtpDirParsed
+ *
+ * LIST command 전송, 결과를 파싱해서
+ * 참고 링크 https://stackoverflow.com/questions/27098332/split-string-by-carriage-return-c
+ * @return 1 if successful, 0 otherwise
+ * @param bufferData: 결과를 쓸 포인터
+ * @param path: FTP 경로
+ * @param nControl: 접속할 FTP 주소/정보가 격납된 netbuf 포인터
+ */
+GLOBALDEF int FtpDirDataParsed(char *bufferData, const char *path, netbuf *nControl)
+{
+    return FtpXferReadData(bufferData, path, nControl, FTPLIB_DIR_VERBOSE, FTPLIB_ASCII);    
+//    char *line = NULL;
+//    line = strtok(bufferData, "\r\n");
+//    while (line != NULL)
+//    {
+//        printf("%s\n", line);
+//        line = strtok(NULL, "\r\n");
+//    }
+//    return result;
 }
 
 /*
@@ -1640,7 +1662,7 @@ GLOBALDEF int FtpModDate(const char *path, char *dt, int max, netbuf *nControl)
  * return 1 if successful, 0 otherwise
  */
 GLOBALDEF int FtpGet(const char *outputfile, const char *path,
-        char mode, netbuf *nControl)
+                     char mode, netbuf *nControl)
 {
     return FtpXfer(outputfile, path, nControl, FTPLIB_FILE_READ, mode);
 }
@@ -1651,7 +1673,7 @@ GLOBALDEF int FtpGet(const char *outputfile, const char *path,
  * return 1 if successful, 0 otherwise
  */
 GLOBALDEF int FtpPut(const char *inputfile, const char *path, char mode,
-        netbuf *nControl)
+                     netbuf *nControl)
 {
     return FtpXfer(inputfile, path, nControl, FTPLIB_FILE_WRITE, mode);
 }

@@ -66,6 +66,8 @@
 #define SETSOCKOPT_OPTVAL_TYPE (void *)
 #endif
 
+// 헤더로 이동
+/*
 #define FTPLIB_BUFSIZ 8192
 #define RESPONSE_BUFSIZ 1024
 #define TMP_BUFSIZ 1024
@@ -74,6 +76,7 @@
 #define FTPLIB_CONTROL 0
 #define FTPLIB_READ 1
 #define FTPLIB_WRITE 2
+*/
 
 #if !defined FTPLIB_DEFMODE
 #define FTPLIB_DEFMODE FTPLIB_PASSIVE
@@ -1111,9 +1114,14 @@ GLOBALDEF int FtpAccess(const char *path,
                 "Missing path argument for file transfer\n");
         return 0;
     }
-    sprintf(buf, "TYPE %c", mode);
-    if (!FtpSendCmd(buf, '2', nControl))
-        return 0;
+
+    if (typ != FTPLIB_ABORT) {
+        // 중지 작업이 아닌 경우
+        // TYPE 전송후 결과 확인
+        sprintf(buf, "TYPE %c", mode);
+        if (!FtpSendCmd(buf, '2', nControl))
+            return 0;
+    }
 
     // 확인용 0번째 캐릭터
     char checker = '1';
@@ -1145,8 +1153,6 @@ GLOBALDEF int FtpAccess(const char *path,
         case FTPLIB_ABORT:
             strcpy(buf,"ABOR");
             dir = FTPLIB_ABORT;
-            // REST 반환값은 2로 확인
-            checker = '2';
             break;
         default:
             sprintf(nControl->response, "Invalid open type %d\n", typ);
@@ -1160,20 +1166,28 @@ GLOBALDEF int FtpAccess(const char *path,
             return 0;
         strcpy(&buf[i], path);
     }
-    if (FtpOpenPort(nControl, nData, mode, dir) == -1)
-        return 0;
+    
+    // 중지 작업이 아닌 경우, 포트를 연다
+    if (typ != FTPLIB_ABORT) {
+        if (FtpOpenPort(nControl, nData, mode, dir) == -1)
+            return 0;
+    }
 
     if (!FtpSendCmd(buf, checker, nControl))
     {
-        FtpClose(*nData);
-        *nData = NULL;
+        if (nData != NULL) {
+            FtpClose(*nData);
+            *nData = NULL;
+        }
         return 0;
     }
 
     // 중지 성공시 종료 처리
     if (typ == FTPLIB_ABORT) {
-        FtpClose(*nData);
-        *nData = NULL;
+        if (nData != NULL) {
+            FtpClose(*nData);
+            *nData = NULL;
+        }
         nControl->data = NULL;
         return 1;
     }
@@ -1184,8 +1198,10 @@ GLOBALDEF int FtpAccess(const char *path,
     {
         if (!FtpAcceptConnection(*nData, nControl))
         {
-            FtpClose(*nData);
-            *nData = NULL;
+            if (nData != NULL) {
+                FtpClose(*nData);
+                *nData = NULL;
+            }
             nControl->data = NULL;
             return 0;
         }
@@ -1502,6 +1518,7 @@ static int FtpXfer(const char *localfile, const char *path,
     FtpClose(nData);
     return rv;
 }
+
 /**
  * 커맨드를 전송, 데이터를 포인터로 반환하는 메쏘드
  *

@@ -127,8 +127,10 @@
 
 @end
 
+// MARK: - FTPClient Class -
 @implementation FTPClient
 
+// MARK: - Initialization
 + (instancetype)clientWithCredentials:(FTPCredentials *)credentials
 {
 	return [[self alloc] initWithCredentials:credentials];
@@ -164,6 +166,163 @@
 	return [self initWithCredentials:creds];
 }
 
+// MARK: - Working Function
+/**
+ * 커맨드를 전송, 데이터를 포인터로 반환하는 메쏘드
+ *
+ * 데이터 / 디렉토리 읽기 전용 메쏘드이며, 쓰기 용도로 사용해선 안 된다
+ *
+ * @return 성공시 1 반환, 실패시 0 반환
+ * @param FTP 파일 경로
+ * @param offset 다운로드 시작점. 불필요시 0으로 지정
+ * @param length 다운로드 받을 길이. 불필요시 0으로 지정
+ * @param nControl netbuf
+ * @param type 전송 타입
+ * @param mode 전송 모드. 바이너리/아스키/이미지 중에서 선택.
+ */
+- (NSProgress * _Nullable)ftpXferReadDataAt:(const char *)path
+                                     offset:(long long int)offset
+                                     length:(long long int)length
+                                    control:(netbuf *)nControl
+                                       type:(int)type
+                                       mode:(int)mode
+                                    completion:(void (^)(NSData * _Nullable data, NSError * _Nullable error))completion
+{
+    netbuf *nData;
+    if (!FtpAccess(path, type, mode, offset, nControl, &nData))
+    {
+        return NULL;
+    }
+
+    long int totalUnitCount = 0;
+    if (length == 0) {
+        totalUnitCount = [self fileSizeAt:path];
+    }
+    else {
+        totalUnitCount = length;
+    }
+    
+    if (totalUnitCount == 0) {
+        return NULL;
+    }
+    if (offset > totalUnitCount) {
+        return NULL;
+    }
+    
+    NSProgress *xferProgress = [[NSProgress alloc] init];
+    [xferProgress setTotalUnitCount:totalUnitCount];
+
+    // 백그라운드 큐로 실행
+    dispatch_async(_queue, ^{
+        char *dbuf = malloc(FTPLIB_BUFSIZ);
+        
+        char *bufferData = (char *)malloc(sizeof(char) * FTPLIB_BUFFER_LENGTH);
+        // 작업 실패 여부
+        bool wasFailed = false;
+        // 작업 강제 중지 여부
+        bool wasAborted = false;
+        // 전송 길이 도달 여부
+        bool isEndOfLength = 0;
+
+        while ((FtpRead(dbuf, FTPLIB_BUFSIZ, nData)) > 0)
+        {
+            // progress 중지 발생시
+            if ([xferProgress isCancelled] == true) {
+                wasFailed = true;
+                wasAborted = true;
+                break;
+            }
+
+            long long int bufferLength = strlen(bufferData);
+            long long int dbufLength = strlen(dbuf);
+            long long int totalLength = bufferLength + dbufLength;
+            
+            // 현재 bufferData 에 dbuf를 추가한 경우, 메모리 증가가 필요한지 여부를 확인
+            int multiple = ((int)totalLength / FTPLIB_BUFFER_LENGTH) + 1;
+            if (bufferLength < multiple * FTPLIB_BUFFER_LENGTH) {
+                // 메모리 증대 필요시
+                // realloc 실행
+                // https://woo-dev.tistory.com/124
+                char *tempBuffer = bufferData;
+                bufferData = (char *)realloc(bufferData, multiple * FTPLIB_BUFFER_LENGTH);
+                if (bufferData == NULL) {
+                    // 실패시 기존 포인터를 해제하고 중지 처리
+                    wasFailed = true;
+                    free(tempBuffer);
+                    break;
+                }
+            }
+            
+            char *strippedDbuf;
+            if (length > 0 &&
+                totalLength > length) {
+                long long int stripLength = dbufLength - (totalLength - length);
+                strippedDbuf = (char *)malloc(stripLength + 1);
+                strncpy(strippedDbuf, dbuf, stripLength);
+                strippedDbuf[stripLength + 1] = 0;
+                isEndOfLength = true;
+            }
+            else {
+                strippedDbuf = dbuf;
+            }
+            
+            // bufferData에 strippedDbuf를 추가
+            if (strcat(bufferData, strippedDbuf) == NULL)
+            {
+                if (ftplib_debug)
+                    perror("data read error");
+                
+                // 스트립 발생시 strippedDbuf 해제
+                if (isEndOfLength == true) {
+                    wasAborted = true;
+                    free(strippedDbuf);
+                }
+                break;
+            }
+                        
+            // 전송 길이 도달 여부 발생시 (전체 길이가 정해진 길이를 초과한 경우이므로 중지)
+            // - strippedDbuf 해제
+            if (isEndOfLength == 1) {
+                wasAborted = true;
+                free(strippedDbuf);
+                break;
+            }
+            
+            // progress 진행상태 업데이트
+            [xferProgress setCompletedUnitCount:strlen(bufferData)];
+        }
+        
+        // progress 진행상태 업데이트
+        [xferProgress setCompletedUnitCount:strlen(bufferData)];
+
+        free(dbuf);
+
+        if (wasAborted == true) {
+            // 사용자 중지 발생시
+            FtpAccess(path, FTPLIB_ABORT, FTPLIB_BINARY, 0, nControl, NULL);
+        }
+        FtpClose(nData);
+        
+        if (wasFailed == true) {
+            // 실패시 에러 반환
+            NSString *response = NSLocalizedString(@"Failed to download file.", @"");
+            NSError *error = [NSError FTPKitErrorWithResponse:response];
+            completion(NULL, error);
+        }
+        else {
+            completion([[NSData alloc] initWithBytes:bufferData length:totalUnitCount], NULL);
+        }
+
+        free(bufferData);
+    });
+    
+    // Progress 반환
+    return xferProgress;
+}
+
+
+// MARK: - Methods
+
 - (NSString *)urlEncode:(NSString *)path
 {
     return [path stringByRemovingPercentEncoding];
@@ -172,6 +331,9 @@
 
 - (long long int)fileSizeAtPath:(NSString *)path
 {
+    const char *cPath = [[self urlEncode:path] cStringUsingEncoding:_encoding];
+    return [self fileSizeAt:cPath];
+    /*
     netbuf *conn = [self connect];
     if (conn == NULL)
         return -1;
@@ -184,6 +346,22 @@
         return -1;
     }
     FKLogDebug(@"%@ bytes %d", path, bytes);
+    return (long long int)bytes;
+     */
+}
+- (long long int)fileSizeAt:(const char *)path
+{
+    netbuf *conn = [self connect];
+    if (conn == NULL)
+        return -1;
+    unsigned int bytes;
+    int stat = FtpSize(path, &bytes, FTPLIB_BINARY, conn);
+    FtpQuit(conn);
+    if (stat == 0) {
+        FKLogError(@"File most likely does not exist %@", [NSString stringWithCString:path encoding:_encoding]);
+        return -1;
+    }
+    FKLogDebug(@"%@ bytes %d", [NSString stringWithCString:path encoding:_encoding], bytes);
     return (long long int)bytes;
 }
 
@@ -328,6 +506,38 @@
     }
     
     return [[NSData alloc] initWithBytes:bufferData length:length];
+}
+
+/**
+ FTP 경로에서 데이터 읽기.
+ */
+- (NSProgress * _Nullable)downloadFile:(NSString * _Nonnull)remotePath
+                                offset:(long long int)offset
+                                length:(long long int)length
+                            completion:(void (^ _Nonnull)(NSData * _Nullable data, NSError * _Nullable error))completion {
+    netbuf *conn = [self connect];
+    FTPHandle *handle = [FTPHandle handleAtPath:remotePath type:FTPHandleTypeFile];
+    if (conn == NULL)
+        return NULL;
+    
+    char *bufferData;
+    const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:self.encoding];
+
+    int type = FTPLIB_FILE_READ;
+    if (offset > 0) {
+        type = FTPLIB_FILE_READ_FROM;
+    }
+    NSProgress *progress = [self ftpXferReadDataAt:path
+                                            offset:offset
+                                            length:length
+                                           control:conn
+                                              type:type
+                                              mode:FTPLIB_BINARY
+                                        completion:^(NSData * _Nullable data, NSError * _Nullable error) {
+        completion(data, error);
+        FtpQuit(conn);
+    }];
+    return progress;
 }
 
 - (BOOL)downloadHandle:(FTPHandle *)handle to:(NSString *)localPath progress:(BOOL (^)(NSUInteger, NSUInteger))progress

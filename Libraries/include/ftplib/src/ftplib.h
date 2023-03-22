@@ -61,7 +61,17 @@
 #define FTPLIB_CALLBACKBYTES 5
 
 /* Buffer Length */
+// 디렉토리/데이터 읽기에 사용되는 버퍼 크기
 #define FTPLIB_BUFFER_LENGTH 32768
+// 일반 버퍼 크기
+#define FTPLIB_BUFSIZ 8192
+#define RESPONSE_BUFSIZ 1024
+#define TMP_BUFSIZ 1024
+#define ACCEPT_TIMEOUT 30
+
+#define FTPLIB_CONTROL 0
+#define FTPLIB_READ 1
+#define FTPLIB_WRITE 2
 
 #ifdef __cplusplus
 extern "C" {

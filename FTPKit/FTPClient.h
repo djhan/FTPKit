@@ -190,6 +190,13 @@
                             length:(long long int)length
                           progress:(void (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress
                            failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
+/**
+ FTP 경로에서 데이터 읽기.
+ */
+- (NSProgress * _Nullable)downloadFile:(NSString * _Nonnull)remotePath
+                                offset:(long long int)offset
+                                length:(long long int)length
+                            completion:(void (^ _Nonnull)(NSData * _Nullable data, NSError * _Nullable error))completion;
 
 /**
  Refer to downloadFile:to:progress:

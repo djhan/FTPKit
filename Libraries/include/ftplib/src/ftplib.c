@@ -1114,6 +1114,10 @@ GLOBALDEF int FtpAccess(const char *path,
     sprintf(buf, "TYPE %c", mode);
     if (!FtpSendCmd(buf, '2', nControl))
         return 0;
+
+    // 확인용 0번째 캐릭터
+    char checker = '1';
+    // 타입에 따라 스위칭
     switch (typ)
     {
         case FTPLIB_DIR:
@@ -1131,6 +1135,8 @@ GLOBALDEF int FtpAccess(const char *path,
         case FTPLIB_FILE_READ_FROM:
             sprintf(buf, "REST %lld\r\nRETR", offset);
             dir = FTPLIB_READ;
+            // REST 반환값은 3으로 확인
+            checker = '3';
             break;
         case FTPLIB_FILE_WRITE:
             strcpy(buf,"STOR");
@@ -1139,6 +1145,8 @@ GLOBALDEF int FtpAccess(const char *path,
         case FTPLIB_ABORT:
             strcpy(buf,"ABOR");
             dir = FTPLIB_ABORT;
+            // REST 반환값은 2로 확인
+            checker = '2';
             break;
         default:
             sprintf(nControl->response, "Invalid open type %d\n", typ);
@@ -1154,22 +1162,22 @@ GLOBALDEF int FtpAccess(const char *path,
     }
     if (FtpOpenPort(nControl, nData, mode, dir) == -1)
         return 0;
-    
-    /// 확인용 0번째 캐릭터
-    char checker;
-    if (typ == FTPLIB_FILE_READ_FROM) {
-        // REST 반환값은 3으로 확인
-        checker = '3';
-    }
-    else {
-        checker = '1';
-    }
+
     if (!FtpSendCmd(buf, checker, nControl))
     {
         FtpClose(*nData);
         *nData = NULL;
         return 0;
     }
+
+    // 중지 성공시 종료 처리
+    if (typ == FTPLIB_ABORT) {
+        FtpClose(*nData);
+        *nData = NULL;
+        nControl->data = NULL;
+        return 1;
+    }
+
     (*nData)->ctrl = nControl;
     nControl->data = *nData;
     if (nControl->cmode == FTPLIB_PORT)

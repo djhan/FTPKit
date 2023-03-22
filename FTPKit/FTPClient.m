@@ -11,9 +11,6 @@
 @implementation FTPItem
 
 - (void)dealloc {
-    if (_filename != NULL) {
-        _filename = NULL;
-    }
     if (_modificationDate != NULL) {
         _modificationDate = NULL;
     }
@@ -69,7 +66,7 @@
  
  @return netbuf The connection to the FTP server on success. NULL otherwise.
  */
-- (netbuf *)connect;
+- (netbuf * _Nullable)connect;
 
 /**
  Send arbitrary command to the FTP server.
@@ -87,7 +84,7 @@
  
  @return String to temporary path.
  */
-- (NSString *)temporaryUrl;
+- (NSString * _Nonnull)temporaryUrl;
 
 - (NSDictionary *)entryByReencodingNameInEntry:(NSDictionary *)entry encoding:(NSStringEncoding)newEncoding;
 
@@ -106,7 +103,7 @@
  
  @param message Description to set to last error.
  */
-- (void)failedWithMessage:(NSString *)message;
+- (void)failedWithMessage:(NSString * _Nonnull)message;
 
 /**
  Convenience method that wraps failure(error) in dispatch_async(main_queue)
@@ -114,7 +111,7 @@
  it doesn't get nil'ed out by the next command before the callee has a chance
  to read the error.
  */
-- (void)returnFailureLastError:(void (^)(NSError *error))failure;
+- (void)returnFailureLastError:(void (^)(NSError * _Nonnull error))failure;
 
 /**
  URL encode a path.
@@ -123,7 +120,7 @@
  
  @param path The path to URL encode.
  */
-- (NSString *)urlEncode:(NSString *)path;
+- (NSString * _Nonnull)urlEncode:(NSString * _Nonnull)path;
 
 @end
 
@@ -188,25 +185,44 @@
                                        mode:(int)mode
                                     completion:(void (^)(NSData * _Nullable data, NSError * _Nullable error))completion
 {
+    // 파일 읽기 또는 디렉토리 읽기 동작이 아닌 경우 NULL 반환
+    if (type != FTPLIB_FILE_READ &&
+        type != FTPLIB_FILE_READ_FROM &&
+        type != FTPLIB_DIR &&
+        type != FTPLIB_DIR_VERBOSE) {
+        return NULL;;
+    }
+    
+    // 파일 읽기 작업인지 여부
+    BOOL isReadFile = false;
+    if (type == FTPLIB_FILE_READ ||
+        type == FTPLIB_FILE_READ_FROM) {
+        isReadFile = true;
+    }
+    
     netbuf *nData;
     if (!FtpAccess(path, type, mode, offset, nControl, &nData))
     {
         return NULL;
     }
 
-    long int totalUnitCount = 0;
-    if (length == 0) {
-        totalUnitCount = [self fileSizeAt:path];
-    }
-    else {
-        totalUnitCount = length;
-    }
+    long int totalUnitCount = -1;
     
-    if (totalUnitCount == 0) {
-        return NULL;
-    }
-    if (offset > totalUnitCount) {
-        return NULL;
+    // 데이터 파일을 읽는 경우는 totalUnitCount를 파일 크기로 지정
+    if (isReadFile) {
+        if (length == 0) {
+            totalUnitCount = [self fileSizeAt:path];
+        }
+        else {
+            totalUnitCount = length;
+        }
+        
+        if (totalUnitCount == 0) {
+            return NULL;
+        }
+        if (offset > totalUnitCount) {
+            return NULL;
+        }
     }
     
     NSProgress *xferProgress = [[NSProgress alloc] init];
@@ -223,6 +239,9 @@
         bool wasAborted = false;
         // 전송 길이 도달 여부
         bool isEndOfLength = 0;
+        
+        // 전송된 파일 길이
+        long long int progressed = 0;
 
         while ((FtpRead(dbuf, FTPLIB_BUFSIZ, nData)) > 0)
         {
@@ -272,7 +291,8 @@
                 if (ftplib_debug)
                     perror("data read error");
                 
-                // 스트립 발생시 strippedDbuf 해제
+                // 실패시
+                // 버퍼 일부 제거 발생시 strippedDbuf 해제
                 if (isEndOfLength == true) {
                     wasAborted = true;
                     free(strippedDbuf);
@@ -282,20 +302,35 @@
                         
             // 전송 길이 도달 여부 발생시 (전체 길이가 정해진 길이를 초과한 경우이므로 중지)
             // - strippedDbuf 해제
-            if (isEndOfLength == 1) {
+            if (isEndOfLength == true) {
+                progressed += strlen(strippedDbuf);
                 wasAborted = true;
                 free(strippedDbuf);
                 break;
             }
+            // 전송 길이 미도달시
+            else {
+                progressed += dbufLength;
+            }
             
-            // progress 진행상태 업데이트
-            [xferProgress setCompletedUnitCount:strlen(bufferData)];
+            // 데이터 파일을 읽는 경우는 진행상태 업데이트
+            if (isReadFile) {
+                [xferProgress setCompletedUnitCount:totalLength];
+            }
         }
         
-        // progress 진행상태 업데이트
-        [xferProgress setCompletedUnitCount:strlen(bufferData)];
-
         free(dbuf);
+
+        if (bufferData != NULL) {
+            // 데이터 파일을 읽는 경우는 진행상태를 업데이트
+            if (isReadFile) {
+                [xferProgress setCompletedUnitCount:progressed];
+            }
+            // 아닌 경우 - 디렉토리를 읽는 경우
+            else {
+                [xferProgress setCompletedUnitCount:1];
+            }
+        }
 
         if (wasAborted == true) {
             // 사용자 중지 발생시
@@ -303,17 +338,36 @@
         }
         FtpClose(nData);
         
-        if (wasFailed == true) {
+        if (wasFailed == true ||
+            bufferData == NULL) {
             // 실패시 에러 반환
-            NSString *response = NSLocalizedString(@"Failed to download file.", @"");
+            NSString *response = NSLocalizedString(FTPKIT_FAILED_DOWNLOAD, @"");
             NSError *error = [NSError FTPKitErrorWithResponse:response];
             completion(NULL, error);
         }
         else {
-            completion([[NSData alloc] initWithBytes:bufferData length:totalUnitCount], NULL);
+            // 데이터 파일을 읽는 경우, totalUnitCount에 맞춰서 데이터 생성
+            if (isReadFile) {
+                completion([[NSData alloc] initWithBytes:bufferData length:totalUnitCount], NULL);
+            }
+            // 아닌 경우 - 디렉토리를 읽는 경우
+            else {
+                NSUInteger length = strlen(bufferData);
+                if (length == 0) {
+                    // 데이터 길이가 0인 경우
+                    NSString *response = NSLocalizedString(FTPKIT_FAILED_DOWNLOAD, @"");
+                    NSError *error = [NSError FTPKitErrorWithResponse:response];
+                    completion(NULL, error);
+                }
+                else {
+                    completion([[NSData alloc] initWithBytes:bufferData length:length], NULL);
+                }
+            }
         }
 
-        free(bufferData);
+        if (bufferData != NULL) {
+            free(bufferData);
+        }
     });
     
     // Progress 반환
@@ -370,11 +424,6 @@
     FTPHandle *hdl = [FTPHandle handleAtPath:path type:FTPHandleTypeDirectory];
     return [self listContentsAtHandle:hdl showHiddenFiles:showHiddenFiles];
 }
-- (NSArray *)getListContentsAtPath:(NSString *)path showHiddenFiles:(BOOL)showHiddenFiles
-{
-    FTPHandle *hdl = [FTPHandle handleAtPath:path type:FTPHandleTypeDirectory];
-    return [self getListContentsAtHandle:hdl showHiddenFiles:showHiddenFiles];
-}
 
 - (void)listContentsAtPath:(NSString *)path showHiddenFiles:(BOOL)showHiddenFiles success:(void (^)(NSArray *))success failure:(void (^)(NSError *))failure
 {
@@ -384,9 +433,54 @@
 
 /**
  목록을 가져오는 메쏘드
- @param handle `FTPHandle`
- @param showHiddenFiles 감춤 파일 표시 여부
  */
+- (NSProgress *)getListContentsAtPath:(NSString *)remotePath
+                      showHiddenFiles:(BOOL)showHiddenFiles
+                           completion:(void (^ _Nonnull)(NSArray<FTPItem *> * _Nullable items, NSError * _Nullable error))completion
+{
+    netbuf *conn = [self connect];
+    const char *path = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
+
+    NSProgress *progress = [self ftpXferReadDataAt:path
+                                            offset:0
+                                            length:0
+                                           control:conn
+                                              type:FTPLIB_DIR_VERBOSE
+                                              mode:FTPLIB_ASCII
+                                        completion:^(NSData * _Nullable data, NSError * _Nullable error) {
+        if (error != NULL) {
+            // 에러 발생시, 그대로 에러 반환
+            completion(NULL, error);
+        }
+        else {
+            NSArray *items = [self parseListFromData:data showHiddentFiles:showHiddenFiles];
+            if (items == NULL ||
+                [items count] == 0) {
+                NSString *response = NSLocalizedString(@"Failed to read directory.", @"");
+                NSError *error = [NSError FTPKitErrorWithResponse:response];
+                completion(NULL, error);
+            }
+            else {
+                completion(items, error);
+            }
+        }
+        // 접속 종료
+        FtpQuit(conn);
+    }];
+
+    if (progress == NULL) {
+        // 완료 핸들러 종료
+        NSString *response = NSLocalizedString(FTPKIT_FAILED_READ_DIR, @"");
+        NSError *error = [NSError FTPKitErrorWithResponse:response];
+        completion(NULL, error);
+        return NULL;
+    }
+    return progress;
+}
+/**
+ 목록을 가져오는 메쏘드
+ */
+/*
 - (NSArray *)getListContentsAtHandle:(FTPHandle *)handle showHiddenFiles:(BOOL)showHiddenFiles
 {
     netbuf *conn = [self connect];
@@ -415,6 +509,7 @@
     }
     return files;
 }
+ */
 
 - (NSArray *)listContentsAtHandle:(FTPHandle *)handle showHiddenFiles:(BOOL)showHiddenFiles
 {
@@ -475,10 +570,10 @@
 {
     [self downloadHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeFile]  to:localPath progress:progress success:success failure:failure];
 }
-
 /**
  FTP 경로에서 데이터 읽기.
  */
+/*
 - (NSData * _Nullable)downloadFile:(NSString * _Nonnull)remotePath
                             offset:(long long int)offset
                             length:(long long int)length
@@ -507,7 +602,7 @@
     
     return [[NSData alloc] initWithBytes:bufferData length:length];
 }
-
+*/
 /**
  FTP 경로에서 데이터 읽기.
  */
@@ -520,7 +615,6 @@
     if (conn == NULL)
         return NULL;
     
-    char *bufferData;
     const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:self.encoding];
 
     int type = FTPLIB_FILE_READ;
@@ -537,6 +631,15 @@
         completion(data, error);
         FtpQuit(conn);
     }];
+    
+    if (progress == NULL) {
+        // 완료 핸들러 종료
+        NSString *response = NSLocalizedString(FTPKIT_FAILED_DOWNLOAD, @"");
+        NSError *error = [NSError FTPKitErrorWithResponse:response];
+        completion(NULL, error);
+        return NULL;
+    }
+    
     return progress;
 }
 
@@ -899,7 +1002,7 @@
  @param showHiddenFiles 감춤 파일 표시 여부
  @returns `FTPItem` 배열로 반환
  */
-- (NSArray<FTPItem *> *)parseList:(char *)bufferData showHiddentFiles:(BOOL)showHiddenFiles
+- (NSArray<FTPItem *> *_Nullable)parseListFromBuffer:(char * _Nullable)bufferData showHiddentFiles:(BOOL)showHiddenFiles
 {
     if (bufferData == NULL ||
         strlen(bufferData) == 0) {
@@ -910,11 +1013,42 @@
     if ([listString length] == 0) {
         return nil;
     }
+    return [self parseListFromLists:listString showHiddentFiles:showHiddenFiles];
+}
+/**
+ `NSData` 기반으로 파싱 실행
+ @param data 파싱할 NSData
+ @param showHiddenFiles 감춤 파일 표시 여부
+ @returns `FTPItem` 배열로 반환
+ */
+- (NSArray<FTPItem *> *_Nullable)parseListFromData:(NSData * _Nullable)data showHiddentFiles:(BOOL)showHiddenFiles
+{
+    if (data == NULL ||
+        [data length] == 0) {
+        return nil;
+    }
+
+    NSString *listString = [[NSString alloc] initWithData:data encoding:_encoding];
+    return [self parseListFromLists:listString showHiddentFiles:showHiddenFiles];
+}
+
+/**
+ `NSString` 기반으로 파싱 실행
+ @param listString 파싱할 리스트 목록이 격납된 NSString
+ @param showHiddenFiles 감춤 파일 표시 여부
+ @returns `FTPItem` 배열로 반환
+ */
+- (NSArray<FTPItem *> * _Nullable)parseListFromLists:(NSString * _Nonnull)listString showHiddentFiles:(BOOL)showHiddenFiles
+{
+    if ([listString length] == 0) {
+        return nil;
+    }
+
     NSArray *lists = [listString componentsSeparatedByString:@"\n"];
     if ([lists count] == 0) {
         return nil;
     }
-    
+
     NSMutableArray<FTPItem *> *parsedLists = [[NSMutableArray alloc] init];
     for (NSInteger i = 0; i < [lists count]; i++) {
         NSString *originLine = lists[i];
@@ -928,9 +1062,8 @@
         if (result == 1) {
             NSString *filename = [NSString stringWithCString:parsed->name encoding:_encoding];
             bool isHidden;
-            // flagtryretr 가 true 또는 파일명이 . 으로 시작하는 경우 hidden file로 간주
-            if (parsed->flagtryretr == true ||
-                [filename hasPrefix:@"."] == true) {
+            // 파일명이 . 으로 시작하는 경우 hidden file로 간주
+            if ([filename hasPrefix:@"."] == true) {
                 isHidden = true;
             }
             else {

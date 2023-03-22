@@ -71,7 +71,20 @@
 //    NSURL *url = [[NSURL alloc] initFileURLWithPath:@"/Users/djhan/Desktop/exr.zip"];
 //    [data writeToURL:url atomically:true];
     
-    XCTestExpectation *expectation = [self expectationWithDescription:@"Download File..."];
+    XCTestExpectation *expectationDir = [self expectationWithDescription:@"Read Directory..."];
+
+    [ftp getListContentsAtPath:@"/0.Privates"
+               showHiddenFiles:false
+                    completion:^(NSArray<FTPItem *> * _Nullable items, NSError * _Nullable error) {
+        for (NSInteger i = 0; i < [items count]; i++) {
+            FTPItem *item = items[i];
+            NSLog(@"%@\n", [item filename]);
+        }
+        [expectationDir fulfill];
+    }];
+    [self waitForExpectations:@[expectationDir] timeout:3];
+    
+    XCTestExpectation *expectationDownload = [self expectationWithDescription:@"Download File..."];
 
     NSProgress *progress = [ftp downloadFile:@"/0.Privates/exr.zip"
                                       offset:10
@@ -80,10 +93,10 @@
         NSLog(@"data size = %lu", [data length]);
         NSURL *url = [[NSURL alloc] initFileURLWithPath:@"/Users/djhan/Desktop/exr.zip"];
         [data writeToURL:url atomically:true];
-        [expectation fulfill];
+        [expectationDownload fulfill];
     }];
     
-    [self waitForExpectations:@[expectation] timeout:10];
+    [self waitForExpectations:@[expectationDownload] timeout:10];
 
 //    bool result = [ftp downloadFile:@"/0.Privates/exr.zip"
 //                                 to:@"/Users/djhan/Desktop/exr.zip"

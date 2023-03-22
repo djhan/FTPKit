@@ -14,6 +14,10 @@
 #import "FTPCredentials.h"
 
 
+// MARK: - Error Messages -
+#define FTPKIT_FAILED_READ_DIR @"Failed to read directory"
+#define FTPKIT_FAILED_DOWNLOAD @"Failed to download file"
+
 // MARK: - FTPItem Class -
 /**
  FTPItem Class
@@ -111,12 +115,17 @@
 
 /**
  목록을 가져오는 메쏘드
- @param path 목록을 가져올 경로
+ 
+ - 반환된 NSProgress를 이용해 작업 취소 가능
+ 
+ @param remotePath 목록을 가져올 경로
  @param showHiddenFiles 감춤 파일 표시 여부
- @return List of contents as FTPHandle objects.
+ @param completion 완료 핸들러로 읽어들인 FTPItem 배열 반환. 실패시 error 값이 반환.
+ @return NSProgress 반환. 실패시 NULL 반환.
  */
-- (NSArray * _Nullable)getListContentsAtPath:(NSString * _Nonnull)path
-                             showHiddenFiles:(BOOL)showHiddenFiles;
+- (NSProgress * _Nullable)getListContentsAtPath:(NSString * _Nonnull)remotePath
+                                showHiddenFiles:(BOOL)showHiddenFiles
+                                     completion:(void (^ _Nonnull)(NSArray<FTPItem *> * _Nullable items, NSError * _Nullable error))completion;
 /**
  List directory contents at path.
  
@@ -180,18 +189,16 @@
 - (BOOL)downloadFile:(NSString * _Nonnull)remotePath
                   to:(NSString * _Nonnull)localPath
             progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress;
+/**
+ FTP 경로에서 데이터 읽기.
+ 
+ - 반환된 NSProgress를 이용해 작업 취소 가능
 
-/**
- FTP 경로에서 데이터 읽기.
- @return 성공시 NSData 반환.
- */
-- (NSData * _Nullable)downloadFile:(NSString * _Nonnull)remotePath
-                            offset:(long long int)offset
-                            length:(long long int)length
-                          progress:(void (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress
-                           failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
-/**
- FTP 경로에서 데이터 읽기.
+ @param remotePath Full path of remote file to download.
+ @param offset 다운로드를 시작할 offset 위치. 처음부터 다운로드시 0 지정
+ @param length 다운로드 받을 길이. 전체 다운로드시 0 지정
+ @param completion 완료 핸들러. 성공시 data 반환. 실패시 error 반환.
+ @return NSProgress 반환. 실패시 NULL 반환
  */
 - (NSProgress * _Nullable)downloadFile:(NSString * _Nonnull)remotePath
                                 offset:(long long int)offset
@@ -555,7 +562,7 @@
  
  @return The current working directory.
  */
-- (NSString * _Nonnull)printWorkingDirectory;
+- (NSString * _Nullable)printWorkingDirectory;
 
 @end
 

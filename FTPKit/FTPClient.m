@@ -114,7 +114,7 @@
  it doesn't get nil'ed out by the next command before the callee has a chance
  to read the error.
  */
-- (void)returnFailure:(void (^)(NSError *error))failure;
+- (void)returnFailureLastError:(void (^)(NSError *error))failure;
 
 /**
  URL encode a path.
@@ -167,7 +167,7 @@
 - (NSString *)urlEncode:(NSString *)path
 {
     return [path stringByRemovingPercentEncoding];
-    //return [path stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    //return [path stringByReplacingPercentEscapesUsingEncoding:_encoding];
 }
 
 - (long long int)fileSizeAtPath:(NSString *)path
@@ -175,7 +175,7 @@
     netbuf *conn = [self connect];
     if (conn == NULL)
         return -1;
-    const char *cPath = [[self urlEncode:path] cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *cPath = [[self urlEncode:path] cStringUsingEncoding:_encoding];
     unsigned int bytes;
     int stat = FtpSize(cPath, &bytes, FTPLIB_BINARY, conn);
     FtpQuit(conn);
@@ -214,12 +214,12 @@
     netbuf *conn = [self connect];
     if (conn == NULL)
         return nil;
-    const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:_encoding];
     // 리스트 결과값 초기화
     printf("int max = %i", INT_MAX);
     char *bufferData = NULL;
     int stat = FtpDirData(&bufferData, path, conn);
-    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     FtpQuit(conn);
     if (stat == 0 ||
         strlen(bufferData) == 0) {
@@ -243,11 +243,11 @@
     netbuf *conn = [self connect];
     if (conn == NULL)
         return nil;
-    const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:_encoding];
     NSString *tmpPath = [self temporaryUrl];
-    const char *output = [tmpPath cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *output = [tmpPath cStringUsingEncoding:_encoding];
     int stat = FtpDir(output, path, conn);
-    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     FtpQuit(conn);
     if (stat == 0) {
         self.lastError = [NSError FTPKitErrorWithResponse:response];
@@ -283,7 +283,7 @@
                 success(contents);
             });
         } else if (! contents && failure) {
-            [self returnFailure:failure];
+            [self returnFailureLastError:failure];
         }
     });
 }
@@ -298,16 +298,48 @@
     [self downloadHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeFile]  to:localPath progress:progress success:success failure:failure];
 }
 
+/**
+ FTP 경로에서 데이터 읽기.
+ */
+- (NSData * _Nullable)downloadFile:(NSString * _Nonnull)remotePath
+                            offset:(long long int)offset
+                            length:(long long int)length
+                          progress:(void (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress
+                           failure:(void (^ _Nonnull)(NSError * _Nullable error))failure {
+    netbuf *conn = [self connect];
+    FTPHandle *handle = [FTPHandle handleAtPath:remotePath type:FTPHandleTypeFile];
+    if (conn == NULL)
+        return NULL;
+    
+    char *bufferData;
+    const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:self.encoding];
+    int stat = FtpGetData(&bufferData, path, FTPLIB_BINARY, offset, length, conn);
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:self.encoding];
+    FtpQuit(conn);
+    if (stat == 0) {
+        NSError *error = [NSError FTPKitErrorWithResponse:response];
+        [self returnFailure:failure error:error];
+    }
+    if (bufferData == NULL &&
+        strlen(bufferData) >= length) {
+        NSString *response = NSLocalizedString(@"Failed to download file.", @"");
+        NSError *error = [NSError FTPKitErrorWithResponse:response];
+        [self returnFailure:failure error:error];
+    }
+    
+    return [[NSData alloc] initWithBytes:bufferData length:length];
+}
+
 - (BOOL)downloadHandle:(FTPHandle *)handle to:(NSString *)localPath progress:(BOOL (^)(NSUInteger, NSUInteger))progress
 {
     netbuf *conn = [self connect];
     if (conn == NULL)
         return NO;
-    const char *output = [localPath cStringUsingEncoding:NSUTF8StringEncoding];
-    const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *output = [localPath cStringUsingEncoding:_encoding];
+    const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:_encoding];
     // @todo Send w/ appropriate mode. FTPLIB_ASCII | FTPLIB_BINARY
     int stat = FtpGet(output, path, FTPLIB_BINARY, conn);
-    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     // @todo Use 'progress' block.
     FtpQuit(conn);
     if (stat == 0) {
@@ -326,7 +358,7 @@
                 success();
             });
         } else if (! ret && failure) {
-            [self returnFailure:failure];
+            [self returnFailureLastError:failure];
         }
     });
 }
@@ -336,12 +368,12 @@
     netbuf *conn = [self connect];
     if (conn == NULL)
         return NO;
-    const char *input = [localPath cStringUsingEncoding:NSUTF8StringEncoding];
-    const char *path = [remotePath cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *input = [localPath cStringUsingEncoding:_encoding];
+    const char *path = [remotePath cStringUsingEncoding:_encoding];
     // @todo Send w/ appropriate mode. FTPLIB_ASCII | FTPLIB_BINARY
     int stat = FtpPut(input, path, FTPLIB_BINARY, conn);
     // @todo Use 'progress' block.
-    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     FtpQuit(conn);
     if (stat == 0) {
         // Invalid path, wrong permissions, etc. Make sure that permissions are
@@ -361,7 +393,7 @@
                 success();
             });
         } else if (! ret && failure) {
-            [self returnFailure:failure];
+            [self returnFailureLastError:failure];
         }
     });
 }
@@ -381,9 +413,9 @@
     netbuf *conn = [self connect];
     if (conn == NULL)
         return NO;
-    const char *path = [handle.path cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *path = [handle.path cStringUsingEncoding:_encoding];
     int stat = FtpMkdir(path, conn);
-    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     FtpQuit(conn);
     if (stat == 0) {
         self.lastError = [NSError FTPKitErrorWithResponse:response];
@@ -401,7 +433,7 @@
                 success();
             });
         } else if (! ret && failure) {
-            [self returnFailure:failure];
+            [self returnFailureLastError:failure];
         }
     });
 }
@@ -431,13 +463,13 @@
     netbuf *conn = [self connect];
     if (conn == NULL)
         return NO;
-    const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:_encoding];
     int stat = 0;
     if (handle.type == FTPHandleTypeDirectory)
         stat = FtpRmdir(path, conn);
     else
         stat = FtpDelete(path, conn);
-    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     FtpQuit(conn);
     if (stat == 0) {
         self.lastError = [NSError FTPKitErrorWithResponse:response];
@@ -455,7 +487,7 @@
                 success();
             });
         } else if (! ret && failure) {
-            [self returnFailure:failure];
+            [self returnFailureLastError:failure];
         }
     });
 }
@@ -483,7 +515,7 @@
     if (conn == NULL)
         return NO;
     BOOL success = [self sendCommand:command conn:conn];
-    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     FtpQuit(conn);
     if (! success) {
         self.lastError = [NSError FTPKitErrorWithResponse:response];
@@ -501,7 +533,7 @@
                 success();
             });
         } else if (! ret && failure) {
-            [self returnFailure:failure];
+            [self returnFailureLastError:failure];
         }
     });
 }
@@ -511,12 +543,12 @@
     netbuf *conn = [self connect];
     if (conn == NULL)
         return NO;
-    const char *src = [[self urlEncode:sourcePath] cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *src = [[self urlEncode:sourcePath] cStringUsingEncoding:_encoding];
     // @note The destination path does not need to be URL encoded. In fact, if
     // it is, the filename will include the percent escaping!
-    const char *dst = [destPath cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *dst = [destPath cStringUsingEncoding:_encoding];
     int stat = FtpRename(src, dst, conn);
-    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     FtpQuit(conn);
     if (stat == 0) {
         self.lastError = [NSError FTPKitErrorWithResponse:response];
@@ -534,7 +566,7 @@
                 success();
             });
         } else if (! ret && failure) {
-            [self returnFailure:failure];
+            [self returnFailureLastError:failure];
         }
     });
 }
@@ -567,7 +599,7 @@
                 success();
             });
         } else if (! ret && failure) {
-            [self returnFailure:failure];
+            [self returnFailureLastError:failure];
         }
     });
 }
@@ -577,9 +609,9 @@
 - (netbuf *)connect
 {
     self.lastError = nil;
-    const char *host = [_credentials.host cStringUsingEncoding:NSUTF8StringEncoding];
-    const char *user = [_credentials.username cStringUsingEncoding:NSUTF8StringEncoding];
-    const char *pass = [_credentials.password cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *host = [_credentials.host cStringUsingEncoding:_encoding];
+    const char *user = [_credentials.username cStringUsingEncoding:_encoding];
+    const char *pass = [_credentials.password cStringUsingEncoding:_encoding];
     netbuf *conn;
     int stat = FtpConnect(host, &conn);
     if (stat == 0) {
@@ -590,7 +622,7 @@
     }
     stat = FtpLogin(user, pass, conn);
     if (stat == 0) {
-        NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
+        NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
         self.lastError = [NSError FTPKitErrorWithResponse:response];
         FtpQuit(conn);
         return NULL;
@@ -600,9 +632,9 @@
 
 - (BOOL)sendCommand:(NSString *)command conn:(netbuf *)conn
 {
-    const char *cmd = [command cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *cmd = [command cStringUsingEncoding:_encoding];
     if (!FtpSendCmd(cmd, '2', conn)) {
-        NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
+        NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
         self.lastError = [NSError FTPKitErrorWithResponse:response];
         return NO;
     }
@@ -631,7 +663,7 @@
     NSString *newName = nil;
     NSString *name = [entry objectForKey:(id)kCFFTPResourceName];
     if (name != nil) {
-        NSData *data = [name dataUsingEncoding:NSUTF8StringEncoding]; //NSMacOSRomanStringEncoding];
+        NSData *data = [name dataUsingEncoding:_encoding]; //NSMacOSRomanStringEncoding];
         if (data != nil) {
             newName = [[NSString alloc] initWithData:data encoding:newEncoding];
         }
@@ -686,8 +718,8 @@
         if (result == 1) {
             NSString *filename = [NSString stringWithCString:parsed->name encoding:_encoding];
             bool isHidden;
-            // flagtryretr 가 false 또는 파일명이 . 으로 시작하는 경우 hidden file로 간주
-            if (parsed->flagtryretr == false ||
+            // flagtryretr 가 true 또는 파일명이 . 으로 시작하는 경우 hidden file로 간주
+            if (parsed->flagtryretr == true ||
                 [filename hasPrefix:@"."] == true) {
                 isHidden = true;
             }
@@ -730,7 +762,7 @@
         CFIndex bytes = CFFTPCreateParsedResourceListing(NULL, &((const uint8_t *) data.bytes)[offset], data.length - offset, &thisEntry);
         if (bytes > 0) {
             if (thisEntry != NULL) {
-                NSDictionary *entry = [self entryByReencodingNameInEntry:(__bridge NSDictionary *)thisEntry encoding:NSUTF8StringEncoding];
+                NSDictionary *entry = [self entryByReencodingNameInEntry:(__bridge NSDictionary *)thisEntry encoding:_encoding];
                 FTPHandle *ftpHandle = [FTPHandle handleAtPath:handle.path attributes:entry];
 				if (! [ftpHandle.name hasPrefix:@"."] || showHiddenFiles) {
 					[files addObject:ftpHandle];
@@ -763,13 +795,13 @@
     netbuf *conn = [self connect];
     if (conn == NULL)
         return nil;
-    const char *cPath = [[self urlEncode:remotePath] cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *cPath = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
     char dt[kFTPKitRequestBufferSize];
     // This is returning FALSE when attempting to create a new folder that exists... why?
     // MDTM does not work with folders. It is meant to be used only for types
     // of files that can be downloaded using the RETR command.
     int stat = FtpModDate(cPath, dt, kFTPKitRequestBufferSize, conn);
-    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     FtpQuit(conn);
     if (stat == 0) {
         self.lastError = [NSError FTPKitErrorWithResponse:response];
@@ -779,7 +811,7 @@
     // FTP spec: YYYYMMDDhhmmss
     // @note dt always contains a trailing newline char.
     formatter.dateFormat = @"yyyyMMddHHmmss\n";
-    NSString *dateString = [NSString stringWithCString:dt encoding:NSUTF8StringEncoding];
+    NSString *dateString = [NSString stringWithCString:dt encoding:_encoding];
     NSDate *date = [formatter dateFromString:dateString];
     return date;
 }
@@ -793,7 +825,7 @@
                 success(date);
             });
         } else if (self->_lastError && failure) {
-            [self returnFailure:failure];
+            [self returnFailureLastError:failure];
         }
     });
 }
@@ -835,7 +867,7 @@
     netbuf *conn = [self connect];
     if (conn == NULL)
         return NO;
-    const char *cPath = [remotePath cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *cPath = [remotePath cStringUsingEncoding:_encoding];
     int stat = FtpChdir(cPath, conn);
     FtpQuit(conn);
     if (stat == 0)
@@ -852,7 +884,7 @@
                 success(exists);
             });
         } else if (self->_lastError && failure) {
-            [self returnFailure:failure];
+            [self returnFailureLastError:failure];
         }
     });
 }
@@ -862,9 +894,9 @@
     netbuf *conn = [self connect];
     if (conn == NULL)
         return NO;
-    const char *cPath = [remotePath cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *cPath = [remotePath cStringUsingEncoding:_encoding];
     int stat = FtpChdir(cPath, conn);
-    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     FtpQuit(conn);
     if (stat == 0) {
         self.lastError = [NSError FTPKitErrorWithResponse:response];
@@ -880,18 +912,30 @@
         return nil;
     char cPath[kFTPKitTempBufferSize];
     int stat = FtpPwd(cPath, kFTPKitTempBufferSize, conn);
-    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:NSUTF8StringEncoding];
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     FtpQuit(conn);
     if (stat == 0) {
         self.lastError = [NSError FTPKitErrorWithResponse:response];
         return nil;
     }
-    return [NSString stringWithCString:cPath encoding:NSUTF8StringEncoding];
+    return [NSString stringWithCString:cPath encoding:_encoding];
 }
 
-- (void)returnFailure:(void (^)(NSError *))failure
+/**
+ lastError를 에러 완료 핸들러로 반환
+ */
+- (void)returnFailureLastError:(void (^)(NSError * _Nonnull))failure
 {
     NSError *error = [_lastError copy];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        failure(error);
+    });
+}
+/**
+ 특정 에러를 에러 완료 핸들러로 반환
+ */
+- (void)returnFailure:(void (^)(NSError * _Nonnull))failure error:(NSError * _Nonnull)error
+{
     dispatch_async(dispatch_get_main_queue(), ^{
         failure(error);
     });

@@ -42,7 +42,7 @@
 @interface FTPClient : NSObject
 
 /** Credentials used to login to the server. */
-@property (nonatomic, readonly) FTPCredentials* credentials;
+@property (nonatomic, readonly) FTPCredentials* _Nonnull credentials;
 
 /**
  The last encountered error. Please note that this value does not get nil'ed
@@ -50,7 +50,7 @@
  to determine if the last operation succeeded or not. Check the return value
  first _then_ get the lastError.
  */
-@property (nonatomic, readonly) NSError *lastError;
+@property (nonatomic, readonly) NSError * _Nullable lastError;
 
 /**
  Factory method to create FTPClient instance.
@@ -58,7 +58,7 @@
  @param FTPLocation The location's credentials
  @return FTPClient
  */
-+ (instancetype)clientWithCredentials:(FTPCredentials *)credentials;
++ (instancetype _Nonnull)clientWithCredentials:(FTPCredentials * _Nonnull)credentials;
 
 /**
  Factory method to create FTPClient instance.
@@ -70,11 +70,11 @@
  @param password Password of user.
  @return FTPClient
  */
-+ (instancetype)clientWithHost:(NSString *)host
-                          port:(int)port
-                      encoding:(int)encoding
-                      username:(NSString *)username
-                      password:(NSString* )password;
++ (instancetype _Nonnull)clientWithHost:(NSString * _Nonnull)host
+                                   port:(int)port
+                               encoding:(int)encoding
+                               username:(NSString * _Nonnull)username
+                               password:(NSString* _Nonnull )password;
 
 /**
  Create an instance of FTPClient.
@@ -82,7 +82,7 @@
  @param FTPLocation The location's credentials
  @return FTPClient
  */
-- (instancetype)initWithCredentials:(FTPCredentials *)credentials;
+- (instancetype _Nonnull)initWithCredentials:(FTPCredentials * _Nonnull)credentials;
 
 /**
  Create an instance of FTPClient.
@@ -94,11 +94,11 @@
  @param password Password of user.
  @return FTPClient
  */
-- (instancetype)initWithHost:(NSString *)host
-                        port:(int)port
-                    encoding:(int)encoding
-                    username:(NSString *)username
-                    password:(NSString* )password;
+- (instancetype _Nonnull )initWithHost:(NSString * _Nonnull)host
+                                  port:(int)port
+                              encoding:(int)encoding
+                              username:(NSString * _Nonnull)username
+                              password:(NSString * _Nonnull)password;
 
 /**
  Get the size, in bytes, for remote file at 'path'. This can not be used
@@ -107,7 +107,7 @@
  @param path Path to get size in bytes for.
  @return The size of the file in bytes. -1 if file doesn't exist.
  */
-- (long long int)fileSizeAtPath:(NSString *)path;
+- (long long int)fileSizeAtPath:(NSString * _Nonnull)path;
 
 /**
  목록을 가져오는 메쏘드
@@ -115,7 +115,8 @@
  @param showHiddenFiles 감춤 파일 표시 여부
  @return List of contents as FTPHandle objects.
  */
-- (NSArray *)getListContentsAtPath:(NSString *)path showHiddenFiles:(BOOL)showHiddenFiles;
+- (NSArray * _Nullable)getListContentsAtPath:(NSString * _Nonnull)path
+                             showHiddenFiles:(BOOL)showHiddenFiles;
 /**
  List directory contents at path.
  
@@ -123,7 +124,8 @@
  @param showHiddenItems Show hidden items in directory.
  @return List of contents as FTPHandle objects.
  */
-- (NSArray *)listContentsAtPath:(NSString *)path showHiddenFiles:(BOOL)showHiddenFiles;
+- (NSArray * _Nullable)listContentsAtPath:(NSString * _Nonnull)path
+                          showHiddenFiles:(BOOL)showHiddenFiles;
 
 /**
  Refer to listContentsAtPath:showHiddenFiles:
@@ -136,9 +138,10 @@
         as FTPHandle objects.
  @param failure Method called when process fails.
  */
-- (void)listContentsAtPath:(NSString *)path showHiddenFiles:(BOOL)showHiddenFiles
-                   success:(void (^)(NSArray *contents))success
-                   failure:(void (^)(NSError *error))failure;
+- (void)listContentsAtPath:(NSString * _Nonnull)path
+           showHiddenFiles:(BOOL)showHiddenFiles
+                   success:(void (^ _Nonnull)(NSArray * _Nullable contents))success
+                   failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  List directory contents at handle's location.
@@ -147,7 +150,8 @@
  @param showHiddenItems Show hidden items in directory.
  @return List of contents as FTPHandle objects.
  */
-- (NSArray *)listContentsAtHandle:(FTPHandle *)handle showHiddenFiles:(BOOL)showHiddenFiles;
+- (NSArray * _Nullable)listContentsAtHandle:(FTPHandle * _Nonnull)handle
+                           showHiddenFiles:(BOOL)showHiddenFiles;
 
 /**
  Refer to listContentsAtHandle:showHiddenFiles:
@@ -159,9 +163,10 @@
         as FTPHandle objects.
  @param failure Method called when process fails.
  */
-- (void)listContentsAtHandle:(FTPHandle *)handle showHiddenFiles:(BOOL)showHiddenFiles
-                     success:(void (^)(NSArray *contents))success
-                     failure:(void (^)(NSError *error))failure;
+- (void)listContentsAtHandle:(FTPHandle * _Nonnull)handle
+             showHiddenFiles:(BOOL)showHiddenFiles
+                     success:(void (^ _Nonnull)(NSArray * _Nullable contents))success
+                     failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Download remote file path to local path.
@@ -172,8 +177,19 @@
         Return NO to cancel the operation.
  @return YES on success. NO on failure.
  */
-- (BOOL)downloadFile:(NSString *)remotePath to:(NSString *)localPath
-            progress:(BOOL (^)(NSUInteger received, NSUInteger totalBytes))progress;
+- (BOOL)downloadFile:(NSString * _Nonnull)remotePath
+                  to:(NSString * _Nonnull)localPath
+            progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress;
+
+/**
+ FTP 경로에서 데이터 읽기.
+ @return 성공시 NSData 반환.
+ */
+- (NSData * _Nullable)downloadFile:(NSString * _Nonnull)remotePath
+                            offset:(long long int)offset
+                            length:(long long int)length
+                          progress:(void (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress
+                           failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Refer to downloadFile:to:progress:
@@ -187,10 +203,11 @@
  @param success Method called when process succeeds.
  @param failure Method called when process fails.
  */
-- (void)downloadFile:(NSString *)remotePath to:(NSString *)localPath
-            progress:(BOOL (^)(NSUInteger received, NSUInteger totalBytes))progress
-             success:(void (^)(void))success
-             failure:(void (^)(NSError *error))failure;
+- (void)downloadFile:(NSString * _Nonnull)remotePath
+                  to:(NSString * _Nonnull)localPath
+            progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress
+             success:(void (^ _Nonnull)(void))success
+             failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Download handle at specific location.
@@ -201,8 +218,9 @@
         Return NO to cancel the operation.
  @return YES on success. NO on failure.
  */
-- (BOOL)downloadHandle:(FTPHandle *)handle to:(NSString *)localPath
-              progress:(BOOL (^)(NSUInteger received, NSUInteger totalBytes))progress;
+- (BOOL)downloadHandle:(FTPHandle * _Nonnull)handle
+                    to:(NSString * _Nonnull)localPath
+              progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress;
 
 /**
  Refer to downloadHandle:to:progress:
@@ -216,10 +234,11 @@
  @param success Method called when process succeeds.
  @param failure Method called when process fails.
  */
-- (void)downloadHandle:(FTPHandle *)handle to:(NSString *)localPath
-              progress:(BOOL (^)(NSUInteger received, NSUInteger totalBytes))progress
-               success:(void (^)(void))success
-               failure:(void (^)(NSError *error))failure;
+- (void)downloadHandle:(FTPHandle * _Nonnull)handle
+                    to:(NSString * _Nonnull)localPath
+              progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress
+               success:(void (^ _Nonnull)(void))success
+               failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Upload file to specific directory on remote server.
@@ -230,8 +249,9 @@
         Return NO to cancel the operation.
  @return YES on success. NO on failure.
  */
-- (BOOL)uploadFile:(NSString *)localPath to:(NSString *)remotePath
-          progress:(BOOL (^)(NSUInteger sent, NSUInteger totalBytes))progress;
+- (BOOL)uploadFile:(NSString * _Nonnull)localPath
+                to:(NSString * _Nonnull)remotePath
+          progress:(BOOL (^ _Nullable)(NSUInteger sent, NSUInteger totalBytes))progress;
 
 /**
  Refer to uploadFile:to:progress:
@@ -245,10 +265,11 @@
  @param success Method called when process succeeds.
  @param failure Method called when process fails.
  */
-- (void)uploadFile:(NSString *)localPath to:(NSString *)remotePath
-          progress:(BOOL (^)(NSUInteger sent, NSUInteger totalBytes))progress
-           success:(void (^)(void))success
-           failure:(void (^)(NSError *error))failure;
+- (void)uploadFile:(NSString * _Nonnull)localPath
+                to:(NSString * _Nonnull)remotePath
+          progress:(BOOL (^ _Nullable)(NSUInteger sent, NSUInteger totalBytes))progress
+           success:(void (^ _Nonnull)(void))success
+           failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Create directory at the specified path on the remote server.
@@ -256,7 +277,7 @@
  @param remotePath Path to create remote directory.
  @return YES on success. NO on failure.
  */
-- (BOOL)createDirectoryAtPath:(NSString *)remotePath;
+- (BOOL)createDirectoryAtPath:(NSString * _Nonnull)remotePath;
 
 /**
  Refer to createDirectoryAtPath:
@@ -265,9 +286,9 @@
  @param success Method called when process succeeds.
  @param failure Method called when process fails.
  */
-- (void)createDirectoryAtPath:(NSString *)remotePath
-                      success:(void (^)(void))success
-                      failure:(void (^)(NSError *error))failure;
+- (void)createDirectoryAtPath:(NSString * _Nonnull)remotePath
+                      success:(void (^ _Nonnull)(void))success
+                      failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Create remote directory within the handle's location.
@@ -276,7 +297,7 @@
  @param remotePath Path to remote directory where file should be created.
  @return YES on success. NO on failure.
  */
-- (BOOL)createDirectoryAtHandle:(FTPHandle *)handle;
+- (BOOL)createDirectoryAtHandle:(FTPHandle * _Nonnull)handle;
 
 /**
  Refer to createDirectoryAtHandle:
@@ -288,9 +309,9 @@
  @param success Method called when process succeeds.
  @param failure Method called when process fails.
  */
-- (void)createDirectoryAtHandle:(FTPHandle *)handle
-                        success:(void (^)(void))success
-                        failure:(void (^)(NSError *error))failure;
+- (void)createDirectoryAtHandle:(FTPHandle * _Nonnull)handle
+                        success:(void (^ _Nonnull)(void))success
+                        failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Delete directory at specified remote path.
@@ -298,7 +319,7 @@
  @param remotePath The path of the remote directory to delete.
  @return YES on success. NO on failure.
  */
-- (BOOL)deleteDirectoryAtPath:(NSString *)remotePath;
+- (BOOL)deleteDirectoryAtPath:(NSString * _Nonnull)remotePath;
 
 /**
  Refer to deleteDirectoryAtPath:
@@ -309,9 +330,9 @@
  @param success Method called when process succeeds.
  @param failure Method called when process fails.
  */
-- (void)deleteDirectoryAtPath:(NSString *)remotePath
-                      success:(void (^)(void))success
-                      failure:(void (^)(NSError *error))failure;
+- (void)deleteDirectoryAtPath:(NSString * _Nonnull)remotePath
+                      success:(void (^ _Nonnull)(void))success
+                      failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Delete a file at a specified remote path.
@@ -319,7 +340,7 @@
  @param remotePath The path to the remote resource to delete.
  @return YES on success. NO on failure.
  */
-- (BOOL)deleteFileAtPath:(NSString *)remotePath;
+- (BOOL)deleteFileAtPath:(NSString * _Nonnull)remotePath;
 
 /**
  Refer to deleteFileAtPath:
@@ -331,9 +352,9 @@
  @param failure Method called when process fails.
  @return FTPRequest The request instance.
  */
-- (void)deleteFileAtPath:(NSString *)remotePath
-                 success:(void (^)(void))success
-                 failure:(void (^)(NSError *error))failure;
+- (void)deleteFileAtPath:(NSString * _Nonnull)remotePath
+                 success:(void (^ _Nonnull)(void))success
+                 failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Delete a remote handle from the server.
@@ -341,7 +362,7 @@
  @param handle The remote handle to delete.
  @return YES on success. NO on failure.
  */
-- (BOOL)deleteHandle:(FTPHandle *)handle;
+- (BOOL)deleteHandle:(FTPHandle * _Nonnull)handle;
 
 /**
  Refer to deleteHandle:
@@ -353,9 +374,9 @@
  @param failure Method called when process fails.
  @return FTPRequest The request instance.
  */
-- (void)deleteHandle:(FTPHandle *)handle
-             success:(void (^)(void))success
-             failure:(void (^)(NSError *error))failure;
+- (void)deleteHandle:(FTPHandle * _Nonnull)handle
+             success:(void (^ _Nonnull)(void))success
+             failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Change file mode of a remote file or directory.
@@ -364,7 +385,7 @@
  @param mode File mode to change to.
  @return YES on success. NO on failure.
  */
-- (BOOL)chmodPath:(NSString *)remotePath toMode:(int)mode;
+- (BOOL)chmodPath:(NSString * _Nonnull)remotePath toMode:(int)mode;
 
 /**
  Refer to chmodPath:toMode:
@@ -376,9 +397,10 @@
  @param success Method called when process succeeds.
  @param failure Method called when process fails.
  */
-- (void)chmodPath:(NSString *)remotePath toMode:(int)mode
-          success:(void (^)(void))success
-          failure:(void (^)(NSError *error))failure;
+- (void)chmodPath:(NSString * _Nonnull)remotePath
+           toMode:(int)mode
+          success:(void (^ _Nonnull)(void))success
+          failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Change file mode of a remote file or directory.
@@ -387,7 +409,7 @@
  @param mode File mode to change to.
  @return YES on success. NO on failure.
  */
-- (BOOL)chmodHandle:(FTPHandle *)handle toMode:(int)mode;
+- (BOOL)chmodHandle:(FTPHandle * _Nonnull)handle toMode:(int)mode;
 
 /**
  Refer to chmodHandle:toMode:
@@ -399,9 +421,10 @@
  @param success Method called when process succeeds.
  @param failure Method called when process fails.
  */
-- (void)chmodHandle:(FTPHandle *)handle toMode:(int)mode
-            success:(void (^)(void))success
-            failure:(void (^)(NSError *error))failure;
+- (void)chmodHandle:(FTPHandle * _Nonnull)handle
+             toMode:(int)mode
+            success:(void (^ _Nonnull)(void))success
+            failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Rename a remote path to something else. This method can be used to move a
@@ -410,7 +433,8 @@
  @param sourcePath Source path to rename.
  @param destPath Destination of renamed file.
  */
-- (BOOL)renamePath:(NSString *)sourcePath to:(NSString *)destPath;
+- (BOOL)renamePath:(NSString * _Nonnull)sourcePath
+                to:(NSString * _Nonnull)destPath;
 
 /**
  Refer to renamePath:to:
@@ -422,9 +446,10 @@
  @param success Method called when process succeeds.
  @param failure Method called when process fails.
  */
-- (void)renamePath:(NSString *)sourcePath to:(NSString *)destPath
-           success:(void (^)(void))success
-           failure:(void (^)(NSError *error))failure;
+- (void)renamePath:(NSString * _Nonnull)sourcePath
+                to:(NSString * _Nonnull)destPath
+           success:(void (^ _Nonnull)(void))success
+           failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Copy a remote path to another location.
@@ -432,7 +457,8 @@
  @param sourcePath Source path to copy.
  @param destPath Destination of copied file.
  */
-- (BOOL)copyPath:(NSString *)sourcePath to:(NSString *)destPath;
+- (BOOL)copyPath:(NSString * _Nonnull)sourcePath
+              to:(NSString * _Nonnull)destPath;
 
 /**
  Refer to copyPath:to:
@@ -444,9 +470,10 @@
  @param success Method called when process succeeds.
  @param failure Method called when process fails.
  */
-- (void)copyPath:(NSString *)sourcePath to:(NSString *)destPath
-         success:(void (^)(void))success
-         failure:(void (^)(NSError *error))failure;
+- (void)copyPath:(NSString * _Nonnull)sourcePath
+              to:(NSString * _Nonnull)destPath
+         success:(void (^ _Nonnull)(void))success
+         failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Returns the last modification date of remotePath. This will NOT work with
@@ -455,7 +482,7 @@
  @param remotePath Path to get modified date for
  @return Date the remote path was last modified
  */
-- (NSDate *)lastModifiedAtPath:(NSString *)remotePath;
+- (NSDate * _Nullable)lastModifiedAtPath:(NSString * _Nonnull)remotePath;
 
 /**
  Refer to lastModifiedAtPath:
@@ -467,9 +494,9 @@
  last modified time.
  @param failure Method called when process fails.
  */
-- (void)lastModifiedAtPath:(NSString *)remotePath
-                   success:(void (^)(NSDate *lastModified))success
-                   failure:(void (^)(NSError *error))failure;
+- (void)lastModifiedAtPath:(NSString * _Nonnull)remotePath
+                   success:(void (^ _Nonnull)(NSDate * _Nullable lastModified))success
+                   failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Check if a remote directory exists.
@@ -480,7 +507,7 @@
  @param remotePath Directory to check
  @return YES if the directory exists. NO, otherwise
  */
-- (BOOL)directoryExistsAtPath:(NSString *)remotePath;
+- (BOOL)directoryExistsAtPath:(NSString * _Nonnull)remotePath;
 
 /**
  Refer to directoryExistsAtPath:
@@ -492,9 +519,9 @@
  directory exists. NO otherwise.
  @param failure Method called when process fails.
  */
-- (void)directoryExistsAtPath:(NSString *)remotePath
-                      success:(void (^)(BOOL exists))success
-                      failure:(void (^)(NSError *error))failure;
+- (void)directoryExistsAtPath:(NSString * _Nonnull)remotePath
+                      success:(void (^ _Nonnull)(BOOL exists))success
+                      failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Change the working directory to remotePath.
@@ -509,7 +536,7 @@
  @param remotePath Remote directory path to make current directory.
  @return YES if the directory was successfully changed.
  */
-- (BOOL)changeDirectoryToPath:(NSString *)remotePath;
+- (BOOL)changeDirectoryToPath:(NSString * _Nonnull)remotePath;
 
 /**
  Returns the current working directory.
@@ -521,7 +548,7 @@
  
  @return The current working directory.
  */
-- (NSString *)printWorkingDirectory;
+- (NSString * _Nonnull)printWorkingDirectory;
 
 @end
 

@@ -100,8 +100,10 @@ struct NetBuf {
     char response[RESPONSE_BUFSIZ];
 };
 
+/*
 static char *version =
     "ftplib Release 4.0 07-Jun-2013, copyright 1996-2003, 2013 Thomas Pfau";
+ */
 
 GLOBALDEF int ftplib_debug = 3;
 
@@ -1126,7 +1128,7 @@ GLOBALDEF int FtpAccess(const char *path,
         strcpy(buf,"RETR");
         dir = FTPLIB_READ;
         break;
-      case FTPLIB_FILE_READ_FROM_LENGTH:
+      case FTPLIB_FILE_READ_FROM:
         sprintf(buf, "REST %lld\r\nRETR", offset);
         dir = FTPLIB_READ;
         break;
@@ -1148,7 +1150,17 @@ GLOBALDEF int FtpAccess(const char *path,
     }
     if (FtpOpenPort(nControl, nData, mode, dir) == -1)
         return 0;
-    if (!FtpSendCmd(buf, '1', nControl))
+    
+    /// 확인용 0번째 캐릭터
+    char checker;
+    if (typ == FTPLIB_FILE_READ_FROM) {
+        // REST 반환값은 3으로 확인
+        checker = '3';
+    }
+    else {
+        checker = '1';
+    }
+    if (!FtpSendCmd(buf, checker, nControl))
     {
         FtpClose(*nData);
         *nData = NULL;
@@ -1503,16 +1515,17 @@ static int FtpXferReadData(char **bufferData,
     char *dbuf;
     netbuf *nData;
     int rv=1;
+        
+    if (!FtpAccess(path, typ, mode, offset, nControl, &nData))
+    {
+        return 0;
+    }
     
     // bufferData가 초기화되지 않은 경우, 초기화
     if (*bufferData == NULL) {
         *bufferData = (char *)malloc(sizeof(char) * FTPLIB_BUFFER_LENGTH);
     }
-    
-    if (!FtpAccess(path, typ, mode, offset, nControl, &nData))
-    {
-        return 0;
-    }
+
     dbuf = malloc(FTPLIB_BUFSIZ);
     while ((FtpRead(dbuf, FTPLIB_BUFSIZ, nData)) > 0)
     {
@@ -1535,22 +1548,39 @@ static int FtpXferReadData(char **bufferData,
             }
         }
 
-        // 전송 길이가 정해진 경우
-        if (length > 0) {
-            if (totalLength > length) {
-                
-            }
-            else if (totalLength == length) {
-                
-            }
+        int isStripped = 0;
+        char *strippedDbuf;
+        if (length > 0 &&
+            totalLength > length) {
+            long long int stripLength = dbufLength - (totalLength - length);
+            strippedDbuf = (char *)malloc(stripLength + 1);
+            strncpy(strippedDbuf, dbuf, stripLength);
+            strippedDbuf[stripLength + 1] = 0;
+            isStripped = 1;
+        }
+        else {
+            strippedDbuf = dbuf;
         }
 
-        // bufferData에 dbuf를 추가
-        if (strcat(*bufferData, dbuf) == NULL)
+        // bufferData에 strippedDbuf를 추가
+        if (strcat(*bufferData, strippedDbuf) == NULL)
         {
             if (ftplib_debug)
                 perror("data read error");
+
             rv = 0;
+            // 스트립 발생시 strippedDbuf 해제
+            if (isStripped == 1) {
+                free(strippedDbuf);
+            }
+            break;
+        }
+        
+        // 스트립 발생시
+        // strippedDbuf 해제
+        // 전체 길이가 정해진 길이를 초과한 경우이므로 중지
+        if (isStripped == 1) {
+            free(strippedDbuf);
             break;
         }
     }
@@ -1750,7 +1780,7 @@ GLOBALDEF int FtpGetData(char **bufferData,
                            offset,
                            length,
                            nControl,
-                           FTPLIB_FILE_READ_FROM_LENGTH,
+                           FTPLIB_FILE_READ_FROM,
                            mode);
 }
 /*

@@ -39,7 +39,7 @@
 #define FTPLIB_DIR 1
 #define FTPLIB_DIR_VERBOSE 2
 #define FTPLIB_FILE_READ 3
-#define FTPLIB_FILE_READ_FROM_LENGTH 4
+#define FTPLIB_FILE_READ_FROM 4
 #define FTPLIB_FILE_WRITE 5
 
 /* FtpAccess() mode codes */
@@ -122,6 +122,23 @@ GLOBALREF int FtpSizeLong(const char *path, fsz_t *size, char mode, netbuf *nCon
 #endif
 GLOBALREF int FtpModDate(const char *path, char *dt, int max, netbuf *nControl);
 GLOBALREF int FtpGet(const char *output, const char *path, char mode, netbuf *nControl);
+/**
+ * FtpGetData
+ * - Get Command 로 정해진 위치에서 정해진 길이만큼의 데이터를 다운로드 받는 메쏘드
+ *
+ * @return 성공시 1 반환. 실패시 0 반환
+ * @param bufferData 결과를 쓸 이중 포인터
+ * @param path FTP 경로
+ * @param offset 다운로드 개시 위치
+ * @param length 다운로드 길이
+ * @param nControl 접속할 FTP 주소/정보가 격납된 netbuf 포인터
+ */
+GLOBALDEF int FtpGetData(char **bufferData,
+                         const char *path,
+                         char mode,
+                         long long int offset,
+                         long long int length,
+                         netbuf *nControl);
 GLOBALREF int FtpPut(const char *input, const char *path, char mode, netbuf *nControl);
 GLOBALREF int FtpRename(const char *src, const char *dst, netbuf *nControl);
 GLOBALREF int FtpDelete(const char *fnm, netbuf *nControl);

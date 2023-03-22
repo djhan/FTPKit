@@ -337,6 +337,10 @@
             FtpAccess(path, FTPLIB_ABORT, FTPLIB_BINARY, 0, nControl, NULL);
         }
         
+        // nData 를 닫는다
+        // 이후 완료 핸들러 실행, 종료 처리까지 한다
+        FtpClose(nData);
+
         // 실패, 또는 bufferData가 NIL
         if (wasFailed == true ||
             bufferData == NULL) {
@@ -387,8 +391,6 @@
         if (dbuf != NULL) {
             free(dbuf);
         }
-        // nData 를 닫는다
-        FtpClose(nData);
         // 버퍼 해제
         if (bufferData != NULL) {
             free(bufferData);

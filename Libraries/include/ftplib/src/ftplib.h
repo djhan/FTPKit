@@ -41,6 +41,7 @@
 #define FTPLIB_FILE_READ 3
 #define FTPLIB_FILE_READ_FROM 4
 #define FTPLIB_FILE_WRITE 5
+#define FTPLIB_ABORT 6
 
 /* FtpAccess() mode codes */
 #define FTPLIB_ASCII 'A'

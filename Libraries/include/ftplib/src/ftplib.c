@@ -89,7 +89,7 @@ struct NetBuf {
     char *buf;
     int dir;
     netbuf *ctrl;
-    netbuf *data;    
+    netbuf *data;
     int cmode;
     struct timeval idletime;
     FtpCallback idlecb;
@@ -101,8 +101,8 @@ struct NetBuf {
 };
 
 /*
-static char *version =
-    "ftplib Release 4.0 07-Jun-2013, copyright 1996-2003, 2013 Thomas Pfau";
+ static char *version =
+ "ftplib Release 4.0 07-Jun-2013, copyright 1996-2003, 2013 Thomas Pfau";
  */
 
 GLOBALDEF int ftplib_debug = 3;
@@ -127,57 +127,57 @@ char *strdup(const char *src)
 static void
 free_service_data(struct servent *s)
 {
-	char **aliases;
+    char **aliases;
     
-	if (s == NULL) return;
+    if (s == NULL) return;
     
-	if (s->s_name != NULL) free(s->s_name);
-	if (s->s_proto != NULL) free(s->s_proto);
+    if (s->s_name != NULL) free(s->s_name);
+    if (s->s_proto != NULL) free(s->s_proto);
     
-	aliases = s->s_aliases;
-	if (aliases != NULL)
-	{
-		while (*aliases != NULL) free(*aliases++);
-		free(s->s_aliases);
-	}
+    aliases = s->s_aliases;
+    if (aliases != NULL)
+    {
+        while (*aliases != NULL) free(*aliases++);
+        free(s->s_aliases);
+    }
 }
 
 static void
 free_service(struct servent *s)
 {
-	if (s == NULL) return;
-	free_service_data(s);
-	free(s);
+    if (s == NULL) return;
+    free_service_data(s);
+    free(s);
 }
 
 static struct servent *
 copy_service(struct servent *in)
 {
-	int i, len;
-	struct servent *s;
+    int i, len;
+    struct servent *s;
     
-	if (in == NULL) return NULL;
+    if (in == NULL) return NULL;
     
-	s = (struct servent *)calloc(1, sizeof(struct servent));
+    s = (struct servent *)calloc(1, sizeof(struct servent));
     
-	s->s_name = LU_COPY_STRING(in->s_name);
+    s->s_name = LU_COPY_STRING(in->s_name);
     
-	len = 0;
-	if (in->s_aliases != NULL)
-	{
-		for (len = 0; in->s_aliases[len] != NULL; len++);
-	}
+    len = 0;
+    if (in->s_aliases != NULL)
+    {
+        for (len = 0; in->s_aliases[len] != NULL; len++);
+    }
     
-	s->s_aliases = (char **)calloc(len + 1, sizeof(char *));
-	for (i = 0; i < len; i++)
-	{
-		s->s_aliases[i] = strdup(in->s_aliases[i]);
-	}
+    s->s_aliases = (char **)calloc(len + 1, sizeof(char *));
+    for (i = 0; i < len; i++)
+    {
+        s->s_aliases[i] = strdup(in->s_aliases[i]);
+    }
     
-	s->s_proto = LU_COPY_STRING(in->s_proto);
-	s->s_port = in->s_port;
+    s->s_proto = LU_COPY_STRING(in->s_proto);
+    s->s_port = in->s_port;
     
-	return s;
+    return s;
 }
 /* End: Apple lu_utils.c */
 
@@ -185,77 +185,77 @@ copy_service(struct servent *in)
 __private_extern__ void
 free_host_data(struct hostent *h)
 {
-	char **aliases;
-	int i;
+    char **aliases;
+    int i;
     
-	if (h == NULL) return;
+    if (h == NULL) return;
     
-	if (h->h_name != NULL) free(h->h_name);
+    if (h->h_name != NULL) free(h->h_name);
     
-	aliases = h->h_aliases;
-	if (aliases != NULL)
-	{
-		while (*aliases != NULL) free(*aliases++);
-		free(h->h_aliases);
-	}
+    aliases = h->h_aliases;
+    if (aliases != NULL)
+    {
+        while (*aliases != NULL) free(*aliases++);
+        free(h->h_aliases);
+    }
     
-	if (h->h_addr_list != NULL)
-	{
-		for (i = 0; h->h_addr_list[i] != NULL; i++) free(h->h_addr_list[i]);
-		free(h->h_addr_list);
-	}
+    if (h->h_addr_list != NULL)
+    {
+        for (i = 0; h->h_addr_list[i] != NULL; i++) free(h->h_addr_list[i]);
+        free(h->h_addr_list);
+    }
 }
 
 void
 free_hostent(struct hostent *h)
 {
-	if (h == NULL) return;
-	free_host_data(h);
-	free(h);
+    if (h == NULL) return;
+    free_host_data(h);
+    free(h);
 }
 
 static struct hostent *
 copy_hostent(struct hostent *in)
 {
-	int i, len, addr_len;
-	struct hostent *h;
+    int i, len, addr_len;
+    struct hostent *h;
     
-	if (in == NULL) return NULL;
+    if (in == NULL) return NULL;
     
-	h = (struct hostent *)calloc(1, sizeof(struct hostent));
+    h = (struct hostent *)calloc(1, sizeof(struct hostent));
     
-	h->h_name = LU_COPY_STRING(in->h_name);
+    h->h_name = LU_COPY_STRING(in->h_name);
     
-	len = 0;
-	if (in->h_aliases != NULL)
-	{
-		for (len = 0; in->h_aliases[len] != NULL; len++);
-	}
+    len = 0;
+    if (in->h_aliases != NULL)
+    {
+        for (len = 0; in->h_aliases[len] != NULL; len++);
+    }
     
-	h->h_aliases = (char **)calloc(len + 1, sizeof(char *));
-	for (i = 0; i < len; i++)
-	{
-		h->h_aliases[i] = strdup(in->h_aliases[i]);
-	}
+    h->h_aliases = (char **)calloc(len + 1, sizeof(char *));
+    for (i = 0; i < len; i++)
+    {
+        h->h_aliases[i] = strdup(in->h_aliases[i]);
+    }
     
-	h->h_addrtype = in->h_addrtype;
-	h->h_length = in->h_length;
+    h->h_addrtype = in->h_addrtype;
+    h->h_length = in->h_length;
     
-	len = 0;
-	if (in->h_addr_list != NULL)
-	{
-		for (len = 0; in->h_addr_list[len] != NULL; len++);
-	}
+    len = 0;
+    if (in->h_addr_list != NULL)
+    {
+        for (len = 0; in->h_addr_list[len] != NULL; len++);
+    }
     
-	addr_len = sizeof(u_long *);
-	h->h_addr_list = (char **)calloc(len + 1, addr_len);
-	for (i = 0; i < len; i++)
-	{
-		h->h_addr_list[i] = (char *)malloc(h->h_length);
-		memmove(h->h_addr_list[i], in->h_addr_list[i], h->h_length);
-	}
+    addr_len = sizeof(u_long *);
+    h->h_addr_list = (char **)calloc(len + 1, addr_len);
+    for (i = 0; i < len; i++)
+    {
+        h->h_addr_list[i] = (char *)malloc(h->h_length);
+        memmove(h->h_addr_list[i], in->h_addr_list[i], h->h_length);
+    }
     
-	return h;
+    return h;
 }
 /* End: Apple lu_host.c */
 
@@ -318,7 +318,7 @@ void *memccpy(void *dest, const void *src, int c, size_t n)
     int i=0;
     const unsigned char *ip=src;
     unsigned char *op=dest;
-
+    
     while (i < n)
     {
         if ((*op++ = *ip++) == c)
@@ -381,7 +381,7 @@ static int readline(char *buf, int max, netbuf *ctl)
     int x, retval = 0;
     char *end, *bp=buf;
     int eof = 0;
-
+    
     if ((ctl->dir != FTPLIB_CONTROL) && (ctl->dir != FTPLIB_READ))
         return -1;
     if (max == 0)
@@ -440,9 +440,9 @@ static int readline(char *buf, int max, netbuf *ctl)
         }
         if (x == 0)
             eof = 1;
-            ctl->cleft -= x;
-            ctl->cavail += x;
-            ctl->cput += x;
+        ctl->cleft -= x;
+        ctl->cavail += x;
+        ctl->cput += x;
     }
     while (1);
     return retval;
@@ -459,7 +459,7 @@ static int writeline(const char *buf, int len, netbuf *nData)
     const char *ubp = buf;
     char *nbp;
     char lc=0;
-
+    
     if (nData->dir != FTPLIB_WRITE)
         return -1;
     nbp = nData->buf;
@@ -573,7 +573,7 @@ GLOBALDEF void FtpInit(void)
 GLOBALDEF char *FtpLastResponse(netbuf *nControl)
 {
     if ((nControl) && (nControl->dir == FTPLIB_CONTROL))
-            return nControl->response;
+        return nControl->response;
     return NULL;
 }
 
@@ -593,13 +593,13 @@ GLOBALDEF int FtpConnect(const char *host, netbuf **nControl)
      connections after a given timeout.
      http://stackoverflow.com/questions/4181784/how-to-set-socket-timeout-in-c-when-making-multiple-connections
      
-    struct timeval timeout;
-    timeout.tv_sec = 20;
-    timeout.tv_usec = 0; */
+     struct timeval timeout;
+     timeout.tv_sec = 20;
+     timeout.tv_usec = 0; */
     netbuf *ctrl;
     char *lhost;
     char *pnum;
-
+    
     memset(&sin,0,sizeof(sin));
     sin.sin_family = AF_INET;
     lhost = strdup(host);
@@ -703,14 +703,14 @@ GLOBALDEF int FtpConnect(const char *host, netbuf **nControl)
         return 0;
     }
     /** This does not work with the connect() method.
-    if (setsockopt(sControl, SOL_SOCKET, SO_SNDTIMEO,
-                   (char *)&timeout, sizeof(timeout)) < 0)
-    {
-        if (ftplib_debug)
-            perror("setsockopt SO_SNDTIMEO");
-        net_close(sControl);
-        return 0;
-    } */
+     if (setsockopt(sControl, SOL_SOCKET, SO_SNDTIMEO,
+     (char *)&timeout, sizeof(timeout)) < 0)
+     {
+     if (ftplib_debug)
+     perror("setsockopt SO_SNDTIMEO");
+     net_close(sControl);
+     return 0;
+     } */
     if (connect(sControl, (struct sockaddr *)&sin, sizeof(sin)) == -1)
     {
         if (ftplib_debug)
@@ -786,32 +786,32 @@ GLOBALDEF int FtpOptions(int opt, long val, netbuf *nControl)
     int v,rv=0;
     switch (opt)
     {
-      case FTPLIB_CONNMODE:
-        v = (int) val;
-        if ((v == FTPLIB_PASSIVE) || (v == FTPLIB_PORT))
-        {
-            nControl->cmode = v;
+        case FTPLIB_CONNMODE:
+            v = (int) val;
+            if ((v == FTPLIB_PASSIVE) || (v == FTPLIB_PORT))
+            {
+                nControl->cmode = v;
+                rv = 1;
+            }
+            break;
+        case FTPLIB_CALLBACK:
+            nControl->idlecb = (FtpCallback) val;
             rv = 1;
-        }
-        break;
-      case FTPLIB_CALLBACK:
-        nControl->idlecb = (FtpCallback) val;
-        rv = 1;
-        break;
-      case FTPLIB_IDLETIME:
-        v = (int) val;
-        rv = 1;
-        nControl->idletime.tv_sec = v / 1000;
-        nControl->idletime.tv_usec = (v % 1000) * 1000;
-        break;
-      case FTPLIB_CALLBACKARG:
-        rv = 1;
-        nControl->idlearg = (void *) val;
-        break;
-      case FTPLIB_CALLBACKBYTES:
-        rv = 1;
-        nControl->cbbytes = (int) val;
-        break;
+            break;
+        case FTPLIB_IDLETIME:
+            v = (int) val;
+            rv = 1;
+            nControl->idletime.tv_sec = v / 1000;
+            nControl->idletime.tv_usec = (v % 1000) * 1000;
+            break;
+        case FTPLIB_CALLBACKARG:
+            rv = 1;
+            nControl->idlearg = (void *) val;
+            break;
+        case FTPLIB_CALLBACKBYTES:
+            rv = 1;
+            nControl->cbbytes = (int) val;
+            break;
     }
     return rv;
 }
@@ -848,7 +848,7 @@ GLOBALDEF int FtpSendCmd(const char *cmd, char expresp, netbuf *nControl)
 GLOBALDEF int FtpLogin(const char *user, const char *pass, netbuf *nControl)
 {
     char tempbuf[64];
-
+    
     if (((strlen(user) + 7) > sizeof(tempbuf)) ||
         ((strlen(pass) + 7) > sizeof(tempbuf)))
         return 0;
@@ -882,7 +882,7 @@ static int FtpOpenPort(netbuf *nControl, netbuf **nData, int mode, int dir)
     char *cp;
     unsigned int v[6];
     char buf[TMP_BUFSIZ];
-
+    
     if (nControl->dir != FTPLIB_CONTROL)
         return -1;
     if ((dir != FTPLIB_READ) && (dir != FTPLIB_WRITE))
@@ -1033,7 +1033,7 @@ static int FtpAcceptConnection(netbuf *nData, netbuf *nControl)
     struct timeval tv;
     fd_set mask;
     int rv = 1;
-
+    
     FD_ZERO(&mask);
     FD_SET(nControl->handle, &mask);
     FD_SET(nData->handle, &mask);
@@ -1087,7 +1087,7 @@ static int FtpAcceptConnection(netbuf *nData, netbuf *nControl)
             rv = 0;
         }
     }
-    return rv;        
+    return rv;
 }
 
 /*
@@ -1116,29 +1116,33 @@ GLOBALDEF int FtpAccess(const char *path,
         return 0;
     switch (typ)
     {
-      case FTPLIB_DIR:
-        strcpy(buf,"NLST");
-        dir = FTPLIB_READ;
-        break;
-      case FTPLIB_DIR_VERBOSE:
-        strcpy(buf,"LIST");
-        dir = FTPLIB_READ;
-        break;
-      case FTPLIB_FILE_READ:
-        strcpy(buf,"RETR");
-        dir = FTPLIB_READ;
-        break;
-      case FTPLIB_FILE_READ_FROM:
-        sprintf(buf, "REST %lld\r\nRETR", offset);
-        dir = FTPLIB_READ;
-        break;
-      case FTPLIB_FILE_WRITE:
-        strcpy(buf,"STOR");
-        dir = FTPLIB_WRITE;
-        break;
-      default:
-        sprintf(nControl->response, "Invalid open type %d\n", typ);
-        return 0;
+        case FTPLIB_DIR:
+            strcpy(buf,"NLST");
+            dir = FTPLIB_READ;
+            break;
+        case FTPLIB_DIR_VERBOSE:
+            strcpy(buf,"LIST");
+            dir = FTPLIB_READ;
+            break;
+        case FTPLIB_FILE_READ:
+            strcpy(buf,"RETR");
+            dir = FTPLIB_READ;
+            break;
+        case FTPLIB_FILE_READ_FROM:
+            sprintf(buf, "REST %lld\r\nRETR", offset);
+            dir = FTPLIB_READ;
+            break;
+        case FTPLIB_FILE_WRITE:
+            strcpy(buf,"STOR");
+            dir = FTPLIB_WRITE;
+            break;
+        case FTPLIB_ABORT:
+            strcpy(buf,"ABOR");
+            dir = FTPLIB_WRITE;
+            break;
+        default:
+            sprintf(nControl->response, "Invalid open type %d\n", typ);
+            return 0;
     }
     if (path != NULL)
     {
@@ -1223,7 +1227,7 @@ GLOBALDEF int FtpWrite(const void *buf, int len, netbuf *nData)
     if (nData->dir != FTPLIB_WRITE)
         return 0;
     if (nData->buf)
-            i = writeline(buf, len, nData);
+        i = writeline(buf, len, nData);
     else
     {
         socket_wait(nData);
@@ -1252,37 +1256,37 @@ GLOBALDEF int FtpClose(netbuf *nData)
     netbuf *ctrl;
     switch (nData->dir)
     {
-      case FTPLIB_WRITE:
-        /* potential problem - if buffer flush fails, how to notify user? */
-        if (nData->buf != NULL)
-            writeline(NULL, 0, nData);
-      case FTPLIB_READ:
-        if (nData->buf)
-            free(nData->buf);
-        shutdown(nData->handle,2);
-        net_close(nData->handle);
-        ctrl = nData->ctrl;
-        free(nData);
-        // ctrl is NULL. Why? All this does is fix the bug. I don't know if
-        // there's an underlying issue with the lib.
-        if (ctrl == NULL)
+        case FTPLIB_WRITE:
+            /* potential problem - if buffer flush fails, how to notify user? */
+            if (nData->buf != NULL)
+                writeline(NULL, 0, nData);
+        case FTPLIB_READ:
+            if (nData->buf)
+                free(nData->buf);
+            shutdown(nData->handle,2);
+            net_close(nData->handle);
+            ctrl = nData->ctrl;
+            free(nData);
+            // ctrl is NULL. Why? All this does is fix the bug. I don't know if
+            // there's an underlying issue with the lib.
+            if (ctrl == NULL)
+                return 1;
+            ctrl->data = NULL;
+            if (ctrl && ctrl->response[0] != '4' && ctrl->response[0] != 5)
+            {
+                int resp = readresp('2', ctrl);
+                return resp;
+            }
             return 1;
-        ctrl->data = NULL;
-        if (ctrl && ctrl->response[0] != '4' && ctrl->response[0] != 5)
-        {
-            int resp = readresp('2', ctrl);
-            return resp;
-        }
-        return 1;
-      case FTPLIB_CONTROL:
-        if (nData->data)
-        {
-            nData->ctrl = NULL;
-            FtpClose(nData->data);
-        }
-        net_close(nData->handle);
-        free(nData);
-        return 0;
+        case FTPLIB_CONTROL:
+            if (nData->data)
+            {
+                nData->ctrl = NULL;
+                FtpClose(nData->data);
+            }
+            net_close(nData->handle);
+            free(nData);
+            return 0;
     }
     return 1;
 }
@@ -1335,7 +1339,7 @@ GLOBALDEF int FtpSysType(char *buf, int max, netbuf *nControl)
 GLOBALDEF int FtpMkdir(const char *path, netbuf *nControl)
 {
     char buf[TMP_BUFSIZ];
-
+    
     if ((strlen(path) + 6) > sizeof(buf))
         return 0;
     sprintf(buf,"MKD %s",path);
@@ -1352,7 +1356,7 @@ GLOBALDEF int FtpMkdir(const char *path, netbuf *nControl)
 GLOBALDEF int FtpChdir(const char *path, netbuf *nControl)
 {
     char buf[TMP_BUFSIZ];
-
+    
     if ((strlen(path) + 6) > sizeof(buf))
         return 0;
     sprintf(buf,"CWD %s",path);
@@ -1381,7 +1385,7 @@ GLOBALDEF int FtpCDUp(netbuf *nControl)
 GLOBALDEF int FtpRmdir(const char *path, netbuf *nControl)
 {
     char buf[TMP_BUFSIZ];
-
+    
     if ((strlen(path) + 6) > sizeof(buf))
         return 0;
     sprintf(buf,"RMD %s",path);
@@ -1418,14 +1422,14 @@ GLOBALDEF int FtpPwd(char *path, int max, netbuf *nControl)
  * @return 1 if successful, 0 otherwise
  */
 static int FtpXfer(const char *localfile, const char *path,
-        netbuf *nControl, int typ, int mode)
+                   netbuf *nControl, int typ, int mode)
 {
     int l,c;
     char *dbuf;
     FILE *local = NULL;
     netbuf *nData;
     int rv=1;
-
+    
     if (localfile != NULL)
     {
         char ac[4];
@@ -1515,7 +1519,7 @@ static int FtpXferReadData(char **bufferData,
     char *dbuf;
     netbuf *nData;
     int rv=1;
-        
+    
     if (!FtpAccess(path, typ, mode, offset, nControl, &nData))
     {
         return 0;
@@ -1525,7 +1529,8 @@ static int FtpXferReadData(char **bufferData,
     if (*bufferData == NULL) {
         *bufferData = (char *)malloc(sizeof(char) * FTPLIB_BUFFER_LENGTH);
     }
-
+    
+    int isAborted = 0;
     dbuf = malloc(FTPLIB_BUFSIZ);
     while ((FtpRead(dbuf, FTPLIB_BUFSIZ, nData)) > 0)
     {
@@ -1547,8 +1552,7 @@ static int FtpXferReadData(char **bufferData,
                 break;
             }
         }
-
-        int isStripped = 0;
+        
         char *strippedDbuf;
         if (length > 0 &&
             totalLength > length) {
@@ -1556,21 +1560,21 @@ static int FtpXferReadData(char **bufferData,
             strippedDbuf = (char *)malloc(stripLength + 1);
             strncpy(strippedDbuf, dbuf, stripLength);
             strippedDbuf[stripLength + 1] = 0;
-            isStripped = 1;
+            isAborted = 1;
         }
         else {
             strippedDbuf = dbuf;
         }
-
+        
         // bufferData에 strippedDbuf를 추가
         if (strcat(*bufferData, strippedDbuf) == NULL)
         {
             if (ftplib_debug)
                 perror("data read error");
-
+            
             rv = 0;
             // 스트립 발생시 strippedDbuf 해제
-            if (isStripped == 1) {
+            if (isAborted == 1) {
                 free(strippedDbuf);
             }
             break;
@@ -1579,13 +1583,21 @@ static int FtpXferReadData(char **bufferData,
         // 스트립 발생시
         // strippedDbuf 해제
         // 전체 길이가 정해진 길이를 초과한 경우이므로 중지
-        if (isStripped == 1) {
+        if (isAborted == 1) {
             free(strippedDbuf);
             break;
         }
     }
+    
     free(dbuf);
-    FtpClose(nData);
+    
+    if (isAborted == 0) {
+        FtpClose(nData);
+    }
+    else {
+        // 중지 발생시
+        
+    }
     return rv;
 }
 /*
@@ -1594,7 +1606,7 @@ static int FtpXferReadData(char **bufferData,
  * return 1 if successful, 0 otherwise
  */
 GLOBALDEF int FtpNlst(const char *outputfile, const char *path,
-        netbuf *nControl)
+                      netbuf *nControl)
 {
     return FtpXfer(outputfile, path, nControl, FTPLIB_DIR, FTPLIB_ASCII);
 }
@@ -1641,30 +1653,30 @@ GLOBALDEF int FtpDirData(char **bufferData, const char *path, netbuf *nControl)
  * @param nControl: 접속할 FTP 주소/정보가 격납된 netbuf 포인터
  */
 /*
-GLOBALDEF int FtpDirDataParsed(char **bufferData, const char *path, netbuf *nControl)
-{
-    int result = FtpXferReadData(bufferData, path, nControl, FTPLIB_DIR_VERBOSE, FTPLIB_ASCII);
-    if (result == 0) {
-        // 실패시 그대로 반환, 종료 처리
-        return result;
-    }
-    
-    char *line = NULL;
-    line = strtok(*bufferData, "\r\n");
-    while (line != NULL)
-    {
-        printf("%s\n", line);
-        
-        struct ftpparse *parse = malloc(sizeof(struct ftpparse));
-        if (ftpparse(parse, line, (int)strlen(line)) == 0) {
-            printf("파싱에 실패했습니다\n");
-        }
-        // 메모리 해제
-        free(parse);
-        line = strtok(NULL, "\r\n");
-    }
-    return result;
-}*/
+ GLOBALDEF int FtpDirDataParsed(char **bufferData, const char *path, netbuf *nControl)
+ {
+ int result = FtpXferReadData(bufferData, path, nControl, FTPLIB_DIR_VERBOSE, FTPLIB_ASCII);
+ if (result == 0) {
+ // 실패시 그대로 반환, 종료 처리
+ return result;
+ }
+ 
+ char *line = NULL;
+ line = strtok(*bufferData, "\r\n");
+ while (line != NULL)
+ {
+ printf("%s\n", line);
+ 
+ struct ftpparse *parse = malloc(sizeof(struct ftpparse));
+ if (ftpparse(parse, line, (int)strlen(line)) == 0) {
+ printf("파싱에 실패했습니다\n");
+ }
+ // 메모리 해제
+ free(parse);
+ line = strtok(NULL, "\r\n");
+ }
+ return result;
+ }*/
 
 /*
  * FtpSize - determine the size of a remote file
@@ -1676,7 +1688,7 @@ GLOBALDEF int FtpSize(const char *path, unsigned int *size, char mode, netbuf *n
     char cmd[TMP_BUFSIZ];
     int resp,rv=1;
     unsigned int sz;
-
+    
     if ((strlen(path) + 7) > sizeof(cmd))
         return 0;
     sprintf(cmd, "TYPE %c", mode);
@@ -1691,7 +1703,7 @@ GLOBALDEF int FtpSize(const char *path, unsigned int *size, char mode, netbuf *n
             *size = sz;
         else
             rv = 0;
-    }   
+    }
     return rv;
 }
 
@@ -1706,7 +1718,7 @@ GLOBALDEF int FtpSizeLong(const char *path, fsz_t *size, char mode, netbuf *nCon
     char cmd[TMP_BUFSIZ];
     int resp,rv=1;
     fsz_t sz;
-
+    
     if ((strlen(path) + 7) > sizeof(cmd))
         return 0;
     sprintf(cmd, "TYPE %c", mode);
@@ -1721,7 +1733,7 @@ GLOBALDEF int FtpSizeLong(const char *path, fsz_t *size, char mode, netbuf *nCon
             *size = sz;
         else
             rv = 0;
-    }   
+    }
     return rv;
 }
 #endif
@@ -1735,7 +1747,7 @@ GLOBALDEF int FtpModDate(const char *path, char *dt, int max, netbuf *nControl)
 {
     char buf[TMP_BUFSIZ];
     int rv = 1;
-
+    
     if ((strlen(path) + 7) > sizeof(buf))
         return 0;
     sprintf(buf, "MDTM %s", path);
@@ -1802,7 +1814,7 @@ GLOBALDEF int FtpPut(const char *inputfile, const char *path, char mode,
 GLOBALDEF int FtpRename(const char *src, const char *dst, netbuf *nControl)
 {
     char cmd[TMP_BUFSIZ];
-
+    
     if (((strlen(src) + 7) > sizeof(cmd)) ||
         ((strlen(dst) + 7) > sizeof(cmd)))
         return 0;
@@ -1823,7 +1835,7 @@ GLOBALDEF int FtpRename(const char *src, const char *dst, netbuf *nControl)
 GLOBALDEF int FtpDelete(const char *fnm, netbuf *nControl)
 {
     char cmd[TMP_BUFSIZ];
-
+    
     if ((strlen(fnm) + 7) > sizeof(cmd))
         return 0;
     sprintf(cmd,"DELE %s",fnm);

@@ -14,7 +14,17 @@
 #import "FTPCredentials.h"
 
 
-// MARK: - Error Messages -
+// MARK: - Errors -
+
+typedef enum {
+    // 디렉토리 읽기 실패
+    FTP_FailedToReadDirectory   = 10,
+    // 파일 다운로드 실패
+    FTP_FailedToDownloadFile    = 20,
+    // 사용자 중지
+    FTP_Aborted                 = 999,
+} FTPErrorCode;
+
 #define FTPKIT_FAILED_READ_DIR @"Failed to read directory"
 #define FTPKIT_FAILED_DOWNLOAD @"Failed to download file"
 

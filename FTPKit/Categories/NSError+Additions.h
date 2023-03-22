@@ -9,8 +9,8 @@ extern NSString *const FTPErrorDomain;
  @param errorCode FTP error code
  @return NSError Respective message for error code.
  */
-+ (NSError *)FTPKitErrorWithCode:(int)errorCode;
++ (NSError * _Nonnull)FTPKitErrorWithCode:(int)errorCode;
 
-+ (NSError *)FTPKitErrorWithResponse:(NSString *)response;
++ (NSError * _Nonnull)FTPKitErrorWithResponse:(NSString * _Nonnull)response;
 
 @end

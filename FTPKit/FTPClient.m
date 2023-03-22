@@ -232,13 +232,25 @@
     dispatch_async(_queue, ^{
         char *dbuf = malloc(FTPLIB_BUFSIZ);
         
-        char *bufferData = (char *)malloc(sizeof(char) * FTPLIB_BUFFER_LENGTH);
+        char *bufferData;
+        if (isReadFile == true) {
+            // 마지막 널값 처리를 위해 totalUnitCount 값에 1을 더한다
+            long long int targetSize = totalUnitCount + 1;
+            if (FTPLIB_BUFFER_LENGTH < targetSize) {
+                targetSize = FTPLIB_BUFFER_LENGTH;
+            }
+            bufferData = (char *)malloc(targetSize);
+        }
+        else {
+            bufferData = (char *)malloc(sizeof(char) * FTPLIB_BUFFER_LENGTH);
+        }
+        
         // 작업 실패 여부
         bool wasFailed = false;
         // 작업 강제 중지 여부
         bool wasAborted = false;
         // 전송 길이 도달 여부
-        bool isEndOfLength = 0;
+        bool isEndOfFile = false;
         
         // 전송된 파일 길이
         long long int progressed = 0;
@@ -256,78 +268,66 @@
             long long int dbufLength = strlen(dbuf);
             long long int totalLength = bufferLength + dbufLength;
             
-            // 현재 bufferData 에 dbuf를 추가한 경우, 메모리 증가가 필요한지 여부를 확인
-            int multiple = ((int)totalLength / FTPLIB_BUFFER_LENGTH) + 1;
-            if (bufferLength < multiple * FTPLIB_BUFFER_LENGTH) {
-                // 메모리 증대 필요시
-                // realloc 실행
-                // https://woo-dev.tistory.com/124
-                char *tempBuffer = bufferData;
-                bufferData = (char *)realloc(bufferData, multiple * FTPLIB_BUFFER_LENGTH);
-                if (bufferData == NULL) {
-                    // 실패시 기존 포인터를 해제하고 중지 처리
-                    wasFailed = true;
-                    free(tempBuffer);
-                    break;
+            // 파일 읽기가 아닌 경우
+            // 즉, 디렉토리 읽기인 경우, bufferData의 메모리 증가가 필요한지 확인 필요
+            if (isReadFile == false) {
+                // 현재 bufferData 에 dbuf를 추가한 경우, 메모리 증가가 필요한지 여부를 확인
+                int multiple = ((int)totalLength / FTPLIB_BUFFER_LENGTH) + 1;
+                if (bufferLength < multiple * FTPLIB_BUFFER_LENGTH) {
+                    // 메모리 증대 필요시
+                    // realloc 실행
+                    // https://woo-dev.tistory.com/124
+                    char *tempBuffer = bufferData;
+                    // 마지막 널값 처리를 위해 multiple 값에 1을 더한다
+                    bufferData = (char *)realloc(bufferData, (multiple * FTPLIB_BUFFER_LENGTH) + 1);
+                    if (bufferData == NULL) {
+                        // 실패시 기존 포인터를 해제하고 중지 처리
+                        wasFailed = true;
+                        free(tempBuffer);
+                        break;
+                    }
                 }
             }
             
-            char *strippedDbuf;
+            // 정해진 length 초과 여부 확인
             if (length > 0 &&
-                totalLength > length) {
-                long long int stripLength = dbufLength - (totalLength - length);
-                strippedDbuf = (char *)malloc(stripLength + 1);
-                strncpy(strippedDbuf, dbuf, stripLength);
-                strippedDbuf[stripLength + 1] = 0;
-                isEndOfLength = true;
-            }
-            else {
-                strippedDbuf = dbuf;
+                totalLength >= length) {
+                // 초과시 파일
+                isEndOfFile = true;
             }
             
-            // bufferData에 strippedDbuf를 추가
-            if (strcat(bufferData, strippedDbuf) == NULL)
+            // bufferData에 dbuf를 추가
+            if (strcat(bufferData, dbuf) == NULL)
             {
                 if (ftplib_debug)
                     perror("data read error");
                 
                 // 실패시
-                // 버퍼 일부 제거 발생시 strippedDbuf 해제
-                if (isEndOfLength == true) {
+                if (isEndOfFile == true) {
                     wasAborted = true;
-                    free(strippedDbuf);
                 }
                 break;
             }
-                        
-            // 전송 길이 도달 여부 발생시 (전체 길이가 정해진 길이를 초과한 경우이므로 중지)
-            // - strippedDbuf 해제
-            if (isEndOfLength == true) {
-                progressed += strlen(strippedDbuf);
-                wasAborted = true;
-                free(strippedDbuf);
-                break;
-            }
-            // 전송 길이 미도달시
-            else {
-                progressed += dbufLength;
-            }
             
+            // progressed에 dbuf의 길이 추가
+            progressed += dbufLength;
             // 데이터 파일을 읽는 경우는 진행상태 업데이트
-            if (isReadFile) {
-                [xferProgress setCompletedUnitCount:totalLength];
-            }
-        }
-        
-        free(dbuf);
-
-        if (bufferData != NULL) {
-            // 데이터 파일을 읽는 경우는 진행상태를 업데이트
             if (isReadFile) {
                 [xferProgress setCompletedUnitCount:progressed];
             }
-            // 아닌 경우 - 디렉토리를 읽는 경우
-            else {
+
+            // 전송 길이 도달 여부 발생시 (전체 길이가 정해진 길이를 초과한 경우이므로 중지)
+            if (isEndOfFile == true) {
+                wasAborted = true;
+                break;
+            }
+            
+        }
+        
+        if (bufferData != NULL) {
+            // 디렉토리를 읽는 경우
+            if (isReadFile == false) {
+                // 사실상 완료 상태로 변경
                 [xferProgress setCompletedUnitCount:1];
             }
         }
@@ -336,27 +336,45 @@
             // 사용자 중지 발생시
             FtpAccess(path, FTPLIB_ABORT, FTPLIB_BINARY, 0, nControl, NULL);
         }
-        FtpClose(nData);
         
+        // 실패, 또는 bufferData가 NIL
         if (wasFailed == true ||
             bufferData == NULL) {
-            // 실패시 에러 반환
-            NSString *response = NSLocalizedString(FTPKIT_FAILED_DOWNLOAD, @"");
-            NSError *error = [NSError FTPKitErrorWithResponse:response];
+            NSError *error;
+            // 사용자 중지 발생시
+            if (wasAborted == true) {
+                error = [NSError FTPKitErrorWithCode:FTP_Aborted];
+            }
+            // 실패시
+            else {
+                if (isReadFile) {
+                    error = [NSError FTPKitErrorWithCode:FTP_FailedToDownloadFile];
+                }
+                else {
+                    error = [NSError FTPKitErrorWithCode:FTP_FailedToReadDirectory];
+                }
+            }
             completion(NULL, error);
         }
+        // bufferData가 있는 경우
         else {
+            NSUInteger length = strlen(bufferData);
             // 데이터 파일을 읽는 경우, totalUnitCount에 맞춰서 데이터 생성
             if (isReadFile) {
-                completion([[NSData alloc] initWithBytes:bufferData length:totalUnitCount], NULL);
+                NSLog(@"전체 길이 = %li || 실제 길이 = %li", totalUnitCount, length);
+                if (totalUnitCount <= length) {
+                    completion([[NSData alloc] initWithBytes:bufferData length:totalUnitCount], NULL);
+                }
+                else {
+                    NSError *error = [NSError FTPKitErrorWithCode:FTP_FailedToDownloadFile];
+                    completion(NULL, error);
+                }
             }
             // 아닌 경우 - 디렉토리를 읽는 경우
             else {
-                NSUInteger length = strlen(bufferData);
                 if (length == 0) {
                     // 데이터 길이가 0인 경우
-                    NSString *response = NSLocalizedString(FTPKIT_FAILED_DOWNLOAD, @"");
-                    NSError *error = [NSError FTPKitErrorWithResponse:response];
+                    NSError *error = [NSError FTPKitErrorWithCode:FTP_FailedToReadDirectory];
                     completion(NULL, error);
                 }
                 else {
@@ -365,6 +383,13 @@
             }
         }
 
+        // dbuf 해제
+        if (dbuf != NULL) {
+            free(dbuf);
+        }
+        // nData 를 닫는다
+        FtpClose(nData);
+        // 버퍼 해제
         if (bufferData != NULL) {
             free(bufferData);
         }
@@ -456,8 +481,7 @@
             NSArray *items = [self parseListFromData:data showHiddentFiles:showHiddenFiles];
             if (items == NULL ||
                 [items count] == 0) {
-                NSString *response = NSLocalizedString(@"Failed to read directory.", @"");
-                NSError *error = [NSError FTPKitErrorWithResponse:response];
+                NSError *error = [NSError FTPKitErrorWithCode:FTP_FailedToReadDirectory];
                 completion(NULL, error);
             }
             else {
@@ -470,8 +494,7 @@
 
     if (progress == NULL) {
         // 완료 핸들러 종료
-        NSString *response = NSLocalizedString(FTPKIT_FAILED_READ_DIR, @"");
-        NSError *error = [NSError FTPKitErrorWithResponse:response];
+        NSError *error = [NSError FTPKitErrorWithCode:FTP_FailedToReadDirectory];
         completion(NULL, error);
         return NULL;
     }
@@ -634,8 +657,7 @@
     
     if (progress == NULL) {
         // 완료 핸들러 종료
-        NSString *response = NSLocalizedString(FTPKIT_FAILED_DOWNLOAD, @"");
-        NSError *error = [NSError FTPKitErrorWithResponse:response];
+        NSError *error = [NSError FTPKitErrorWithCode:FTP_FailedToDownloadFile];
         completion(NULL, error);
         return NULL;
     }

@@ -39,7 +39,7 @@
 #define FTPLIB_DIR 1
 #define FTPLIB_DIR_VERBOSE 2
 #define FTPLIB_FILE_READ 3
-#define FTPLIB_FILE_READ_FROM 4
+#define FTPLIB_FILE_READ_FROM_LENGTH 4
 #define FTPLIB_FILE_WRITE 5
 
 /* FtpAccess() mode codes */
@@ -59,8 +59,8 @@
 #define FTPLIB_CALLBACKARG 4
 #define FTPLIB_CALLBACKBYTES 5
 
-/* DIR Path Length */
-#define FTPLIB_DIR_LENGTH 32768
+/* Buffer Length */
+#define FTPLIB_BUFFER_LENGTH 32768
 
 #ifdef __cplusplus
 extern "C" {
@@ -110,9 +110,9 @@ GLOBALREF int FtpDir(const char *output, const char *path, netbuf *nControl);
  * LIST command 전송, 결과를 Data 포인터로 쓴다
  *
  * @return 1 if successful, 0 otherwise
- * @param bufferData: 결과를 쓸 이중 포인터
- * @param path: FTP 경로
- * @param nControl: 접속할 FTP 주소/정보가 격납된 netbuf 포인터
+ * @param bufferData 결과를 쓸 이중 포인터
+ * @param path FTP 경로
+ * @param nControl 접속할 FTP 주소/정보가 격납된 netbuf 포인터
  */
 GLOBALDEF int FtpDirData(char **bufferData, const char *path, netbuf *nControl);
 

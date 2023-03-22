@@ -9,6 +9,16 @@
  FTPItem Class
  */
 @implementation FTPItem
+
+- (void)dealloc {
+    if (_filename != NULL) {
+        _filename = NULL;
+    }
+    if (_modificationDate != NULL) {
+        _modificationDate = NULL;
+    }
+}
+
 /**
  초기화
  @param filename    파일명
@@ -674,10 +684,11 @@
         int result = ftpparse(parsed, charLine, (int)strlen(charLine));
         // 파일명 발견시
         if (result == 1) {
-
             NSString *filename = [NSString stringWithCString:parsed->name encoding:_encoding];
             bool isHidden;
-            if ([filename hasPrefix:@"."] == true) {
+            // flagtryretr 가 false 또는 파일명이 . 으로 시작하는 경우 hidden file로 간주
+            if (parsed->flagtryretr == false ||
+                [filename hasPrefix:@"."] == true) {
                 isHidden = true;
             }
             else {
@@ -692,7 +703,7 @@
             bool isDir = parsed->flagtrycwd;
             long int size = parsed->size;
             NSDate *modificationDate = NULL;
-            if (parsed->mtime != 0) {
+            if (parsed->mtimetype != FTPPARSE_MTIME_UNKNOWN) {
                 [NSDate dateWithTimeIntervalSince1970:parsed->mtime];
             }
             FTPItem *item = [[FTPItem alloc] initWithFilename:filename

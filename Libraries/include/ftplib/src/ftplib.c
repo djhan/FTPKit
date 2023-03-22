@@ -1093,8 +1093,12 @@ static int FtpAcceptConnection(netbuf *nData, netbuf *nControl)
  *
  * return 1 if successful, 0 otherwise
  */
-GLOBALDEF int FtpAccess(const char *path, int typ, int mode, long long int position,
-                        netbuf *nControl, netbuf **nData)
+GLOBALDEF int FtpAccess(const char *path,
+                        int typ,
+                        int mode,
+                        long long int offset,
+                        netbuf *nControl,
+                        netbuf **nData)
 {
     char buf[TMP_BUFSIZ];
     int dir;
@@ -1122,8 +1126,8 @@ GLOBALDEF int FtpAccess(const char *path, int typ, int mode, long long int posit
         strcpy(buf,"RETR");
         dir = FTPLIB_READ;
         break;
-      case FTPLIB_FILE_READ_FROM:
-        sprintf(buf, "REST %lld\r\nRETR", position);
+      case FTPLIB_FILE_READ_FROM_LENGTH:
+        sprintf(buf, "REST %lld\r\nRETR", offset);
         dir = FTPLIB_READ;
         break;
       case FTPLIB_FILE_WRITE:
@@ -1477,53 +1481,70 @@ static int FtpXfer(const char *localfile, const char *path,
 /**
  * 커맨드를 전송, 데이터를 포인터로 반환하는 메쏘드
  *
- * 읽기 전용 메쏘드
+ * 데이터 / 디렉토리 읽기 전용 메쏘드이며, 쓰기 용도로 사용해선 안 된다
  *
- * @return 1 if successful, 0 otherwise
+ * @return 성공시 1 반환, 실패시 0 반환
+ * @param bufferData 버퍼데이터 char 이중 포인터. 필요시 이 메쏘드 내부에서 초기화 실행
+ * @param FTP 파일 경로
+ * @param offset 다운로드 시작점. 불필요시 0으로 지정
+ * @param length 다운로드 받을 길이. 불필요시 0으로 지정
+ * @param nControl netbuf
+ * @param type 전송 타입
+ * @param mode 전송 모드. 바이너리/아스키/이미지 중에서 선택.
  */
-static int FtpXferReadData(char **bufferData, const char *path,
-                           netbuf *nControl, int typ, int mode)
+static int FtpXferReadData(char **bufferData,
+                           const char *path,
+                           long long int offset,
+                           long long int length,
+                           netbuf *nControl,
+                           int typ,
+                           int mode)
 {
-    //int l;
     char *dbuf;
     netbuf *nData;
     int rv=1;
     
-    // Directory 읽기인 경우
     // bufferData가 초기화되지 않은 경우, 초기화
-    if (typ == FTPLIB_DIR_VERBOSE &&
-        *bufferData == NULL) {
-        *bufferData = (char *)malloc(sizeof(char) * FTPLIB_DIR_LENGTH);
+    if (*bufferData == NULL) {
+        *bufferData = (char *)malloc(sizeof(char) * FTPLIB_BUFFER_LENGTH);
     }
     
-    if (!FtpAccess(path, typ, mode, 0, nControl, &nData))
+    if (!FtpAccess(path, typ, mode, offset, nControl, &nData))
     {
         return 0;
     }
     dbuf = malloc(FTPLIB_BUFSIZ);
-    //while ((l = FtpRead(dbuf, FTPLIB_BUFSIZ, nData)) > 0)
     while ((FtpRead(dbuf, FTPLIB_BUFSIZ, nData)) > 0)
     {
-        // Directory 읽기인 경우
-        if (typ == FTPLIB_DIR_VERBOSE) {
-            long long int bufferLength = strlen(*bufferData);
-            long long int dbufLength = strlen(dbuf);
-            // 현재 bufferData 에 dbuf를 추가한 경우, 메모리 증가가 필요한지 여부를 확인
-            int multiple = ((int)(bufferLength + dbufLength) / FTPLIB_DIR_LENGTH) + 1;
-            if (bufferLength < multiple * FTPLIB_DIR_LENGTH) {
-                // 메모리 증대 필요시
-                // realloc 실행
-                // https://woo-dev.tistory.com/124
-                char *tempBuffer = *bufferData;
-                *bufferData = (char *)realloc(*bufferData, multiple * FTPLIB_DIR_LENGTH);
-                if (bufferData == NULL) {
-                    // 실패시 기존 포인터를 해제하고 중지 처리
-                    free(tempBuffer);
-                    break;
-                }
+        long long int bufferLength = strlen(*bufferData);
+        long long int dbufLength = strlen(dbuf);
+        long long int totalLength = bufferLength + dbufLength;
+        
+        // 현재 bufferData 에 dbuf를 추가한 경우, 메모리 증가가 필요한지 여부를 확인
+        int multiple = ((int)totalLength / FTPLIB_BUFFER_LENGTH) + 1;
+        if (bufferLength < multiple * FTPLIB_BUFFER_LENGTH) {
+            // 메모리 증대 필요시
+            // realloc 실행
+            // https://woo-dev.tistory.com/124
+            char *tempBuffer = *bufferData;
+            *bufferData = (char *)realloc(*bufferData, multiple * FTPLIB_BUFFER_LENGTH);
+            if (bufferData == NULL) {
+                // 실패시 기존 포인터를 해제하고 중지 처리
+                free(tempBuffer);
+                break;
             }
         }
-        
+
+        // 전송 길이가 정해진 경우
+        if (length > 0) {
+            if (totalLength > length) {
+                
+            }
+            else if (totalLength == length) {
+                
+            }
+        }
+
         // bufferData에 dbuf를 추가
         if (strcat(*bufferData, dbuf) == NULL)
         {
@@ -1570,7 +1591,13 @@ GLOBALDEF int FtpDir(const char *outputfile, const char *path, netbuf *nControl)
  */
 GLOBALDEF int FtpDirData(char **bufferData, const char *path, netbuf *nControl)
 {
-    return FtpXferReadData(bufferData, path, nControl, FTPLIB_DIR_VERBOSE, FTPLIB_ASCII);
+    return FtpXferReadData(bufferData,
+                           path,
+                           0,
+                           0,
+                           nControl,
+                           FTPLIB_DIR_VERBOSE,
+                           FTPLIB_ASCII);
 }
 
 /**
@@ -1700,6 +1727,32 @@ GLOBALDEF int FtpGet(const char *outputfile, const char *path,
     return FtpXfer(outputfile, path, nControl, FTPLIB_FILE_READ, mode);
 }
 
+/**
+ * FtpGetData
+ * - Get Command 로 정해진 위치에서 정해진 길이만큼의 데이터를 다운로드 받는 메쏘드
+ *
+ * @return 성공시 1 반환. 실패시 0 반환
+ * @param bufferData 결과를 쓸 이중 포인터
+ * @param path FTP 경로
+ * @param offset 다운로드 개시 위치
+ * @param length 다운로드 길이
+ * @param nControl 접속할 FTP 주소/정보가 격납된 netbuf 포인터
+ */
+GLOBALDEF int FtpGetData(char **bufferData,
+                         const char *path,
+                         char mode,
+                         long long int offset,
+                         long long int length,
+                         netbuf *nControl)
+{
+    return FtpXferReadData(bufferData,
+                           path,
+                           offset,
+                           length,
+                           nControl,
+                           FTPLIB_FILE_READ_FROM_LENGTH,
+                           mode);
+}
 /*
  * FtpPut - issue a PUT command and send data from input
  *

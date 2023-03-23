@@ -146,69 +146,119 @@ typedef enum {
 - (NSProgress * _Nullable)listContentsAtPath:(NSString * _Nonnull)remotePath
                              showHiddenFiles:(BOOL)showHiddenFiles
                                   completion:(void (^ _Nonnull)(NSArray<FTPItem *> * _Nullable items, NSError * _Nullable error))completion;
-/**
- List directory contents at path.
- 
- @param path Path to remote directory to list.
- @param showHiddenItems Show hidden items in directory.
- @return List of contents as FTPHandle objects.
- */
-- (NSArray * _Nullable)listContentsAtPath:(NSString * _Nonnull)path
-                          showHiddenFiles:(BOOL)showHiddenFiles;
+///**
+// List directory contents at path.
+//
+// @param path Path to remote directory to list.
+// @param showHiddenItems Show hidden items in directory.
+// @return List of contents as FTPHandle objects.
+// */
+//- (NSArray * _Nullable)listContentsAtPath:(NSString * _Nonnull)path
+//                          showHiddenFiles:(BOOL)showHiddenFiles;
+//
+///**
+// Refer to listContentsAtPath:showHiddenFiles:
+//
+// This adds the ability to perform the operation asynchronously.
+//
+// @param path Path to remote directory to list.
+// @param showHiddenItems Show hidden items in directory.
+// @param success Method called when process succeeds. Provides list of contents
+//        as FTPHandle objects.
+// @param failure Method called when process fails.
+// */
+//- (void)listContentsAtPath:(NSString * _Nonnull)path
+//           showHiddenFiles:(BOOL)showHiddenFiles
+//                   success:(void (^ _Nonnull)(NSArray * _Nullable contents))success
+//                   failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
+//
+///**
+// List directory contents at handle's location.
+//
+// @param handle Remote directory handle to list.
+// @param showHiddenItems Show hidden items in directory.
+// @return List of contents as FTPHandle objects.
+// */
+//- (NSArray * _Nullable)listContentsAtHandle:(FTPHandle * _Nonnull)handle
+//                           showHiddenFiles:(BOOL)showHiddenFiles;
+//
+///**
+// Refer to listContentsAtHandle:showHiddenFiles:
+//
+// This adds the ability to perform the operation asynchronously.
+//
+// @param showHiddenItems Show hidden items in directory.
+// @param success Method called when process succeeds. Provides list of contents
+//        as FTPHandle objects.
+// @param failure Method called when process fails.
+// */
+//- (void)listContentsAtHandle:(FTPHandle * _Nonnull)handle
+//             showHiddenFiles:(BOOL)showHiddenFiles
+//                     success:(void (^ _Nonnull)(NSArray * _Nullable contents))success
+//                     failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
+//
+///**
+// Download remote file path to local path.
+//
+// @param fileName Full path of remote file to download.
+// @param localPath Local path to download file to.
+// @param progress Calls after data has been received to remote server.
+//        Return NO to cancel the operation.
+// @return YES on success. NO on failure.
+// */
+//- (BOOL)downloadFile:(NSString * _Nonnull)remotePath
+//                  to:(NSString * _Nonnull)localPath
+//            progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress;
+//
+///**
+// Refer to downloadFile:to:progress:
+//
+// This adds the ability to perform the operation asynchronously.
+//
+// @param fileName Full path of remote file to download.
+// @param localPath Local path to download file to.
+// @param progress Calls after data has been received to remote server.
+//        Return NO to cancel the operation.
+// @param success Method called when process succeeds.
+// @param failure Method called when process fails.
+// */
+//- (void)downloadFile:(NSString * _Nonnull)remotePath
+//                  to:(NSString * _Nonnull)localPath
+//            progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress
+//             success:(void (^ _Nonnull)(void))success
+//             failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
+//
+///**
+// Download handle at specific location.
+//
+// @param handle Handle to download. Handles are produced by listDirectory* and friends.
+// @param localPath Local path to download file to.
+// @param progress Calls after data has been received to remote server.
+//        Return NO to cancel the operation.
+// @return YES on success. NO on failure.
+// */
+//- (BOOL)downloadHandle:(FTPHandle * _Nonnull)handle
+//                    to:(NSString * _Nonnull)localPath
+//              progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress;
+//
+///**
+// Refer to downloadHandle:to:progress:
+//
+// This adds the ability to perform the operation asynchronously.
+//
+// @param handle Handle to download. Handles are produced by listDirectory* and friends.
+// @param localPath Local path to download file to.
+// @param progress Calls after data has been received to remote server.
+//        Return NO to cancel the operation.
+// @param success Method called when process succeeds.
+// @param failure Method called when process fails.
+// */
+//- (void)downloadHandle:(FTPHandle * _Nonnull)handle
+//                    to:(NSString * _Nonnull)localPath
+//              progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress
+//               success:(void (^ _Nonnull)(void))success
+//               failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
-/**
- Refer to listContentsAtPath:showHiddenFiles:
- 
- This adds the ability to perform the operation asynchronously.
- 
- @param path Path to remote directory to list.
- @param showHiddenItems Show hidden items in directory.
- @param success Method called when process succeeds. Provides list of contents
-        as FTPHandle objects.
- @param failure Method called when process fails.
- */
-- (void)listContentsAtPath:(NSString * _Nonnull)path
-           showHiddenFiles:(BOOL)showHiddenFiles
-                   success:(void (^ _Nonnull)(NSArray * _Nullable contents))success
-                   failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
-
-/**
- List directory contents at handle's location.
- 
- @param handle Remote directory handle to list.
- @param showHiddenItems Show hidden items in directory.
- @return List of contents as FTPHandle objects.
- */
-- (NSArray * _Nullable)listContentsAtHandle:(FTPHandle * _Nonnull)handle
-                           showHiddenFiles:(BOOL)showHiddenFiles;
-
-/**
- Refer to listContentsAtHandle:showHiddenFiles:
- 
- This adds the ability to perform the operation asynchronously.
- 
- @param showHiddenItems Show hidden items in directory.
- @param success Method called when process succeeds. Provides list of contents
-        as FTPHandle objects.
- @param failure Method called when process fails.
- */
-- (void)listContentsAtHandle:(FTPHandle * _Nonnull)handle
-             showHiddenFiles:(BOOL)showHiddenFiles
-                     success:(void (^ _Nonnull)(NSArray * _Nullable contents))success
-                     failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
-
-/**
- Download remote file path to local path.
- 
- @param fileName Full path of remote file to download.
- @param localPath Local path to download file to.
- @param progress Calls after data has been received to remote server.
-        Return NO to cancel the operation.
- @return YES on success. NO on failure.
- */
-- (BOOL)downloadFile:(NSString * _Nonnull)remotePath
-                  to:(NSString * _Nonnull)localPath
-            progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress;
 /**
  FTP 경로에서 데이터를 파일로 다운로드.
  
@@ -269,56 +319,6 @@ typedef enum {
                                 length:(long long int)length
                             completion:(void (^ _Nonnull)(NSData * _Nullable data,
                                                           NSError * _Nullable error))completion;
-
-/**
- Refer to downloadFile:to:progress:
- 
- This adds the ability to perform the operation asynchronously.
- 
- @param fileName Full path of remote file to download.
- @param localPath Local path to download file to.
- @param progress Calls after data has been received to remote server.
-        Return NO to cancel the operation.
- @param success Method called when process succeeds.
- @param failure Method called when process fails.
- */
-- (void)downloadFile:(NSString * _Nonnull)remotePath
-                  to:(NSString * _Nonnull)localPath
-            progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress
-             success:(void (^ _Nonnull)(void))success
-             failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
-
-/**
- Download handle at specific location.
- 
- @param handle Handle to download. Handles are produced by listDirectory* and friends.
- @param localPath Local path to download file to.
- @param progress Calls after data has been received to remote server.
-        Return NO to cancel the operation.
- @return YES on success. NO on failure.
- */
-- (BOOL)downloadHandle:(FTPHandle * _Nonnull)handle
-                    to:(NSString * _Nonnull)localPath
-              progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress;
-
-/**
- Refer to downloadHandle:to:progress:
- 
- This adds the ability to perform the operation asynchronously.
- 
- @param handle Handle to download. Handles are produced by listDirectory* and friends.
- @param localPath Local path to download file to.
- @param progress Calls after data has been received to remote server.
-        Return NO to cancel the operation.
- @param success Method called when process succeeds.
- @param failure Method called when process fails.
- */
-- (void)downloadHandle:(FTPHandle * _Nonnull)handle
-                    to:(NSString * _Nonnull)localPath
-              progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress
-               success:(void (^ _Nonnull)(void))success
-               failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
-
 /**
  Upload file to specific directory on remote server.
  
@@ -530,29 +530,29 @@ typedef enum {
            success:(void (^ _Nonnull)(void))success
            failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
-/**
- Copy a remote path to another location.
- 
- @param sourcePath Source path to copy.
- @param destPath Destination of copied file.
- */
-- (BOOL)copyPath:(NSString * _Nonnull)sourcePath
-              to:(NSString * _Nonnull)destPath;
-
-/**
- Refer to copyPath:to:
- 
- This adds the ability to perform the operation asynchronously.
- 
- @param sourcePath Source path to copy.
- @param destPath Destination of copied file.
- @param success Method called when process succeeds.
- @param failure Method called when process fails.
- */
-- (void)copyPath:(NSString * _Nonnull)sourcePath
-              to:(NSString * _Nonnull)destPath
-         success:(void (^ _Nonnull)(void))success
-         failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
+///**
+// Copy a remote path to another location.
+//
+// @param sourcePath Source path to copy.
+// @param destPath Destination of copied file.
+// */
+//- (BOOL)copyPath:(NSString * _Nonnull)sourcePath
+//              to:(NSString * _Nonnull)destPath;
+//
+///**
+// Refer to copyPath:to:
+//
+// This adds the ability to perform the operation asynchronously.
+//
+// @param sourcePath Source path to copy.
+// @param destPath Destination of copied file.
+// @param success Method called when process succeeds.
+// @param failure Method called when process fails.
+// */
+//- (void)copyPath:(NSString * _Nonnull)sourcePath
+//              to:(NSString * _Nonnull)destPath
+//         success:(void (^ _Nonnull)(void))success
+//         failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Returns the last modification date of remotePath. This will NOT work with

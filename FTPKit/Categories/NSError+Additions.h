@@ -1,5 +1,5 @@
 
-extern NSString *const FTPErrorDomain;
+extern NSString * _Nonnull const FTPErrorDomain;
 
 @interface NSError (NSError_FTPKitAdditions)
 

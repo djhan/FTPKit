@@ -70,23 +70,23 @@
     
     XCTestExpectation *expectationDownload = [self expectationWithDescription:@"Download File..."];
 
-    NSProgress *downloadProgress = [ftp downloadFile:@"/0.Privates/exr.zip"
-                                          toSavePath:@"/Users/djhan/Desktop/exr.zip"
-                                              offset:0
-                                              length:1024
-                                          completion:^(NSError * _Nullable error) {
 //    NSProgress *downloadProgress = [ftp downloadFile:@"/0.Privates/exr.zip"
+//                                          toSavePath:@"/Users/djhan/Desktop/exr.zip"
 //                                              offset:0
 //                                              length:1024
-//                                          completion:^(NSData * _Nullable data, NSError * _Nullable error) {
+//                                          completion:^(NSError * _Nullable error) {
+    NSProgress *downloadProgress = [ftp downloadFile:@"/0.Privates/exr.zip"
+                                              offset:0
+                                              length:1024
+                                          completion:^(NSData * _Nullable data, NSError * _Nullable error) {
         if (error != NULL) {
             NSLog(@"다운로드 실패. error code = %li", error.code);
         }
-//        else {
-//            NSLog(@"data size = %lu", [data length]);
-//            NSURL *url = [[NSURL alloc] initFileURLWithPath:@"/Users/djhan/Desktop/exr.zip"];
-//            [data writeToURL:url atomically:true];
-//        }
+        else {
+            NSLog(@"data size = %lu", [data length]);
+            NSURL *url = [[NSURL alloc] initFileURLWithPath:@"/Users/djhan/Desktop/exr.zip"];
+            [data writeToURL:url atomically:true];
+        }
         [expectationDownload fulfill];
     }];
     

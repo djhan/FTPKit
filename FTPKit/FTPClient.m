@@ -810,38 +810,38 @@
     return progress;
 }
 
-- (BOOL)downloadHandle:(FTPHandle *)handle to:(NSString *)localPath progress:(BOOL (^)(NSUInteger, NSUInteger))progress
-{
-    netbuf *conn = [self connect];
-    if (conn == NULL)
-        return NO;
-    const char *output = [localPath cStringUsingEncoding:_encoding];
-    const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:_encoding];
-    // @todo Send w/ appropriate mode. FTPLIB_ASCII | FTPLIB_BINARY
-    int stat = FtpGet(output, path, FTPLIB_BINARY, conn);
-    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
-    // @todo Use 'progress' block.
-    FtpQuit(conn);
-    if (stat == 0) {
-        self.lastError = [NSError FTPKitErrorWithResponse:response];
-        return NO;
-    }
-    return YES;
-}
-
-- (void)downloadHandle:(FTPHandle *)handle to:(NSString *)localPath progress:(BOOL (^)(NSUInteger, NSUInteger))progress success:(void (^)(void))success failure:(void (^)(NSError *))failure
-{
-    dispatch_async(_queue, ^{
-        BOOL ret = [self downloadHandle:handle to:localPath progress:progress];
-        if (ret && success) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                success();
-            });
-        } else if (! ret && failure) {
-            [self returnFailureLastError:failure];
-        }
-    });
-}
+//- (BOOL)downloadHandle:(FTPHandle *)handle to:(NSString *)localPath progress:(BOOL (^)(NSUInteger, NSUInteger))progress
+//{
+//    netbuf *conn = [self connect];
+//    if (conn == NULL)
+//        return NO;
+//    const char *output = [localPath cStringUsingEncoding:_encoding];
+//    const char *path = [[self urlEncode:handle.path] cStringUsingEncoding:_encoding];
+//    // @todo Send w/ appropriate mode. FTPLIB_ASCII | FTPLIB_BINARY
+//    int stat = FtpGet(output, path, FTPLIB_BINARY, conn);
+//    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
+//    // @todo Use 'progress' block.
+//    FtpQuit(conn);
+//    if (stat == 0) {
+//        self.lastError = [NSError FTPKitErrorWithResponse:response];
+//        return NO;
+//    }
+//    return YES;
+//}
+//
+//- (void)downloadHandle:(FTPHandle *)handle to:(NSString *)localPath progress:(BOOL (^)(NSUInteger, NSUInteger))progress success:(void (^)(void))success failure:(void (^)(NSError *))failure
+//{
+//    dispatch_async(_queue, ^{
+//        BOOL ret = [self downloadHandle:handle to:localPath progress:progress];
+//        if (ret && success) {
+//            dispatch_async(dispatch_get_main_queue(), ^{
+//                success();
+//            });
+//        } else if (! ret && failure) {
+//            [self returnFailureLastError:failure];
+//        }
+//    });
+//}
 
 - (BOOL)uploadFile:(NSString *)localPath to:(NSString *)remotePath progress:(BOOL (^)(NSUInteger, NSUInteger))progress
 {
@@ -880,14 +880,38 @@
 
 - (BOOL)createDirectoryAtPath:(NSString *)remotePath
 {
-    return [self createDirectoryAtHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeDirectory]];
+    netbuf *conn = [self connect];
+    if (conn == NULL)
+        return NO;
+    const char *path = [remotePath cStringUsingEncoding:_encoding];
+    int stat = FtpMkdir(path, conn);
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
+    FtpQuit(conn);
+    if (stat == 0) {
+        self.lastError = [NSError FTPKitErrorWithResponse:response];
+        return NO;
+    }
+    return YES;
+
+    //return [self createDirectoryAtHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeDirectory]];
 }
 
 - (void)createDirectoryAtPath:(NSString *)remotePath success:(void (^)(void))success failure:(void (^)(NSError *))failure
 {
-    [self createDirectoryAtHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeDirectory] success:success failure:failure];
+    dispatch_async(_queue, ^{
+        BOOL ret = [self createDirectoryAtPath:remotePath];
+        if (ret && success) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                success();
+            });
+        } else if (! ret && failure) {
+            [self returnFailureLastError:failure];
+        }
+    });
+    //[self createDirectoryAtHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeDirectory] success:success failure:failure];
 }
 
+/*
 - (BOOL)createDirectoryAtHandle:(FTPHandle *)handle
 {
     netbuf *conn = [self connect];
@@ -917,27 +941,87 @@
         }
     });
 }
+ */
 
 - (BOOL)deleteDirectoryAtPath:(NSString *)remotePath
 {
-    return [self deleteHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeDirectory]];
+    return [self deleteItemAtPath:remotePath isFile:false];
+    //return [self deleteHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeDirectory]];
 }
 
 - (void)deleteDirectoryAtPath:(NSString *)remotePath success:(void (^)(void))success failure:(void (^)(NSError *))failure
 {
-    [self deleteHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeDirectory] success:success failure:failure];
+    [self deleteItemAtPath:remotePath isFile:false success:success failure:failure];
+    //[self deleteHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeDirectory] success:success failure:failure];
 }
 
 - (BOOL)deleteFileAtPath:(NSString *)remotePath
 {
-    return [self deleteHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeFile]];
+    return [self deleteItemAtPath:remotePath isFile:true];
+    //return [self deleteHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeFile]];
 }
 
 - (void)deleteFileAtPath:(NSString *)remotePath success:(void (^)(void))success failure:(void (^)(NSError *))failure
 {
-    [self deleteHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeFile] success:success failure:failure];
+    [self deleteItemAtPath:remotePath isFile:true success:success failure:failure];
+    //[self deleteHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeFile] success:success failure:failure];
 }
 
+/**
+ 실제 제거 작업 실행 메쏘드
+ 
+ @param remotePath 제거할 아이템 경로
+ @param isFile true 인 경우는 파일, false 는 디렉토리 제거로 판정
+ @returns 제거 성공 여부
+ */
+- (BOOL)deleteItemAtPath:(NSString * _Nonnull)remotePath isFile:(BOOL)isFile
+{
+    netbuf *conn = [self connect];
+    if (conn == NULL)
+        return NO;
+    const char *path = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
+    int stat = 0;
+    // 파일인 경우
+    if (isFile)
+        stat = FtpDelete(path, conn);
+    // 디렉토리인 경우
+    else
+        stat = FtpRmdir(path, conn);
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
+    FtpQuit(conn);
+    if (stat == 0) {
+        self.lastError = [NSError FTPKitErrorWithResponse:response];
+        return NO;
+    }
+    return YES;
+    //return [self deleteHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeDirectory]];
+}
+/**
+ 실제 제거 작업 백그라운드 실행 메쏘드
+ 
+ @param remotePath 제거할 아이템 경로
+ @param isFile true 인 경우는 파일, false 는 디렉토리 제거로 판정
+ @param success 성공시 완료 핸들러
+ @param failure 실패시 완료 핸들러
+ */
+- (void)deleteItemAtPath:(NSString * _Nonnull)remotePath
+                  isFile:(BOOL)isFile
+                 success:(void (^)(void))success
+                 failure:(void (^)(NSError *))failure
+{
+    dispatch_async(_queue, ^{
+        BOOL ret = [self deleteItemAtPath:remotePath isFile:isFile];
+        if (ret && success) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                success();
+            });
+        } else if (! ret && failure) {
+            [self returnFailureLastError:failure];
+        }
+    });
+}
+
+/*
 - (BOOL)deleteHandle:(FTPHandle *)handle
 {
     netbuf *conn = [self connect];
@@ -971,17 +1055,47 @@
         }
     });
 }
+ */
 
 - (BOOL)chmodPath:(NSString *)remotePath toMode:(int)mode
 {
-    return [self chmodHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeUnknown] toMode:mode];
+    if (mode < 0 || mode > 777) {
+        NSDictionary *userInfo = [NSDictionary dictionaryWithObject:NSLocalizedString(@"File mode value must be between 0 and 0777.", @"")
+                                                             forKey:NSLocalizedDescriptionKey];
+        self.lastError = [[NSError alloc] initWithDomain:FTPErrorDomain code:0 userInfo:userInfo];
+        return NO;
+    }
+    NSString *command = [NSString stringWithFormat:@"SITE CHMOD %i %@", mode, [self urlEncode:remotePath]];
+    netbuf *conn = [self connect];
+    if (conn == NULL)
+        return NO;
+    BOOL success = [self sendCommand:command conn:conn];
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
+    FtpQuit(conn);
+    if (! success) {
+        self.lastError = [NSError FTPKitErrorWithResponse:response];
+        return NO;
+    }
+    return YES;
+
+   // return [self chmodHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeUnknown] toMode:mode];
 }
 
 - (void)chmodPath:(NSString *)remotePath toMode:(int)mode success:(void (^)(void))success failure:(void (^)(NSError *))failure
 {
-    [self chmodHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeUnknown] toMode:mode success:success failure:failure];
+    dispatch_async(_queue, ^{
+        BOOL ret = [self chmodPath:remotePath toMode:mode];
+        if (ret && success) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                success();
+            });
+        } else if (! ret && failure) {
+            [self returnFailureLastError:failure];
+        }
+    });
+    //[self chmodHandle:[FTPHandle handleAtPath:remotePath type:FTPHandleTypeUnknown] toMode:mode success:success failure:failure];
 }
-
+/*
 - (BOOL)chmodHandle:(FTPHandle *)handle toMode:(int)mode
 {
     if (mode < 0 || mode > 777) {
@@ -1017,7 +1131,7 @@
         }
     });
 }
-
+*/
 - (BOOL)renamePath:(NSString *)sourcePath to:(NSString *)destPath
 {
     netbuf *conn = [self connect];

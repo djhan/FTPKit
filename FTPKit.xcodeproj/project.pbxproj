@@ -164,6 +164,15 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
+		EECD1C1D29CD1B8600F3B000 /* Deprecated */ = {
+			isa = PBXGroup;
+			children = (
+				F27BA1FB1802FF1800584A9E /* FTPHandle.h */,
+				F27BA1FC1802FF1800584A9E /* FTPHandle.m */,
+			);
+			name = Deprecated;
+			sourceTree = "<group>";
+		};
 		F27BA1C51802FE7E00584A9E = {
 			isa = PBXGroup;
 			children = (
@@ -201,8 +210,7 @@
 				F27BA1F81802FF1800584A9E /* FTPClient.m */,
 				F27BA2051802FF1800584A9E /* FTPCredentials.h */,
 				F27BA2061802FF1800584A9E /* FTPCredentials.m */,
-				F27BA1FB1802FF1800584A9E /* FTPHandle.h */,
-				F27BA1FC1802FF1800584A9E /* FTPHandle.m */,
+				EECD1C1D29CD1B8600F3B000 /* Deprecated */,
 				072A829618CC2442001E640B /* Categories */,
 				072A82BA18CC48DE001E640B /* Libraries */,
 				F27BA1D41802FE7E00584A9E /* Supporting Files */,

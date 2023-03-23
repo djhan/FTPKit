@@ -14,7 +14,9 @@
 #import "FTPCredentials.h"
 
 
-// MARK: - Errors -
+// MARK: - Global Variables -
+
+// MARK: - Errors
 
 /// 에러값 정의
 typedef enum {
@@ -34,9 +36,6 @@ typedef enum {
     FTP_Aborted                     = 999,
     
 } FTPErrorCode;
-
-#define FTPKIT_FAILED_READ_DIR @"Failed to read directory"
-#define FTPKIT_FAILED_DOWNLOAD @"Failed to download file"
 
 // MARK: - FTPItem Class -
 /**
@@ -369,28 +368,28 @@ typedef enum {
                       success:(void (^ _Nonnull)(void))success
                       failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
-/**
- Create remote directory within the handle's location.
- 
- @param directoryName Name of directory to create on remote server.
- @param remotePath Path to remote directory where file should be created.
- @return YES on success. NO on failure.
- */
-- (BOOL)createDirectoryAtHandle:(FTPHandle * _Nonnull)handle;
-
-/**
- Refer to createDirectoryAtHandle:
- 
- This adds the ability to perform the operation asynchronously.
- 
- @param directoryName Name of directory to create on remote server.
- @param remotePath Path to remote directory where file should be created.
- @param success Method called when process succeeds.
- @param failure Method called when process fails.
- */
-- (void)createDirectoryAtHandle:(FTPHandle * _Nonnull)handle
-                        success:(void (^ _Nonnull)(void))success
-                        failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
+///**
+// Create remote directory within the handle's location.
+//
+// @param directoryName Name of directory to create on remote server.
+// @param remotePath Path to remote directory where file should be created.
+// @return YES on success. NO on failure.
+// */
+//- (BOOL)createDirectoryAtHandle:(FTPHandle * _Nonnull)handle;
+//
+///**
+// Refer to createDirectoryAtHandle:
+//
+// This adds the ability to perform the operation asynchronously.
+//
+// @param directoryName Name of directory to create on remote server.
+// @param remotePath Path to remote directory where file should be created.
+// @param success Method called when process succeeds.
+// @param failure Method called when process fails.
+// */
+//- (void)createDirectoryAtHandle:(FTPHandle * _Nonnull)handle
+//                        success:(void (^ _Nonnull)(void))success
+//                        failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Delete directory at specified remote path.
@@ -435,27 +434,27 @@ typedef enum {
                  success:(void (^ _Nonnull)(void))success
                  failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
-/**
- Delete a remote handle from the server.
- 
- @param handle The remote handle to delete.
- @return YES on success. NO on failure.
- */
-- (BOOL)deleteHandle:(FTPHandle * _Nonnull)handle;
-
-/**
- Refer to deleteHandle:
- 
- This adds the ability to perform the operation asynchronously.
- 
- @param handle The remote handle to delete.
- @param success Method called when process succeeds.
- @param failure Method called when process fails.
- @return FTPRequest The request instance.
- */
-- (void)deleteHandle:(FTPHandle * _Nonnull)handle
-             success:(void (^ _Nonnull)(void))success
-             failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
+///**
+// Delete a remote handle from the server.
+//
+// @param handle The remote handle to delete.
+// @return YES on success. NO on failure.
+// */
+//- (BOOL)deleteHandle:(FTPHandle * _Nonnull)handle;
+//
+///**
+// Refer to deleteHandle:
+//
+// This adds the ability to perform the operation asynchronously.
+//
+// @param handle The remote handle to delete.
+// @param success Method called when process succeeds.
+// @param failure Method called when process fails.
+// @return FTPRequest The request instance.
+// */
+//- (void)deleteHandle:(FTPHandle * _Nonnull)handle
+//             success:(void (^ _Nonnull)(void))success
+//             failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Change file mode of a remote file or directory.
@@ -481,29 +480,29 @@ typedef enum {
           success:(void (^ _Nonnull)(void))success
           failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
-/**
- Change file mode of a remote file or directory.
- 
- @param handle The remote handle.
- @param mode File mode to change to.
- @return YES on success. NO on failure.
- */
-- (BOOL)chmodHandle:(FTPHandle * _Nonnull)handle toMode:(int)mode;
-
-/**
- Refer to chmodHandle:toMode:
- 
- This adds the ability to perform the operation asynchronously.
- 
- @param handle The remote handle to change mode on.
- @param mode File mode to change to.
- @param success Method called when process succeeds.
- @param failure Method called when process fails.
- */
-- (void)chmodHandle:(FTPHandle * _Nonnull)handle
-             toMode:(int)mode
-            success:(void (^ _Nonnull)(void))success
-            failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
+///**
+// Change file mode of a remote file or directory.
+//
+// @param handle The remote handle.
+// @param mode File mode to change to.
+// @return YES on success. NO on failure.
+// */
+//- (BOOL)chmodHandle:(FTPHandle * _Nonnull)handle toMode:(int)mode;
+//
+///**
+// Refer to chmodHandle:toMode:
+//
+// This adds the ability to perform the operation asynchronously.
+//
+// @param handle The remote handle to change mode on.
+// @param mode File mode to change to.
+// @param success Method called when process succeeds.
+// @param failure Method called when process fails.
+// */
+//- (void)chmodHandle:(FTPHandle * _Nonnull)handle
+//             toMode:(int)mode
+//            success:(void (^ _Nonnull)(void))success
+//            failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Rename a remote path to something else. This method can be used to move a

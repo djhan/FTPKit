@@ -16,13 +16,23 @@
 
 // MARK: - Errors -
 
+/// 에러값 정의
 typedef enum {
-    // 디렉토리 읽기 실패
-    FTP_FailedToReadDirectory   = 10,
-    // 파일 다운로드 실패
-    FTP_FailedToDownloadFile    = 20,
+    // 성공시
+    FTP_Success                     = 0,
+
+    // 알 수 없는 이유로 읽기 실패
+    FTP_FailedToReadByUnknown       = 20,
+    // 파일 불완전 읽기로 실패
+    FTP_FailedToReadByIncomplete    = 21,
+    // 파일 로컬 저장에 실패
+    FTP_FailedToSaveToLocal         = 22,
+
+    // 접속 불가
+    FTP_CannotConnectToServer       = 998,
     // 사용자 중지
-    FTP_Aborted                 = 999,
+    FTP_Aborted                     = 999,
+    
 } FTPErrorCode;
 
 #define FTPKIT_FAILED_READ_DIR @"Failed to read directory"
@@ -133,9 +143,9 @@ typedef enum {
  @param completion 완료 핸들러로 읽어들인 FTPItem 배열 반환. 실패시 error 값이 반환.
  @return NSProgress 반환. 실패시 NULL 반환.
  */
-- (NSProgress * _Nullable)getListContentsAtPath:(NSString * _Nonnull)remotePath
-                                showHiddenFiles:(BOOL)showHiddenFiles
-                                     completion:(void (^ _Nonnull)(NSArray<FTPItem *> * _Nullable items, NSError * _Nullable error))completion;
+- (NSProgress * _Nullable)listContentsAtPath:(NSString * _Nonnull)remotePath
+                             showHiddenFiles:(BOOL)showHiddenFiles
+                                  completion:(void (^ _Nonnull)(NSArray<FTPItem *> * _Nullable items, NSError * _Nullable error))completion;
 /**
  List directory contents at path.
  
@@ -200,7 +210,51 @@ typedef enum {
                   to:(NSString * _Nonnull)localPath
             progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress;
 /**
- FTP 경로에서 데이터 읽기.
+ FTP 경로에서 데이터를 파일로 다운로드.
+ 
+ - 전체 파일을 특정 경로로 다운로드
+ - 반환된 NSProgress를 이용해 작업 취소 가능
+
+ @param remotePath Full path of remote file to download.
+ @param savePath 다운로드 받은 파일을 저장할 경로.
+ @param completion 완료 핸들러. 실패시 error 반환.
+ @return NSProgress 반환. 실패시 NULL 반환
+ */
+- (NSProgress * _Nullable)downloadFile:(NSString * _Nonnull)remotePath
+                            toSavePath:(NSString * _Nonnull)savePath
+                            completion:(void (^ _Nonnull)(NSError * _Nullable error))completion;
+/**
+ FTP 경로에서 offset/length를 지정해 필요한 만큼의 데이터를 파일로 다운로드.
+ 
+ - 파일 일부를 특정 경로로 다운로드
+ - 반환된 NSProgress를 이용해 작업 취소 가능
+
+ @param remotePath Full path of remote file to download.
+ @param offset 다운로드를 시작할 offset 위치. 처음부터 다운로드시 0 지정
+ @param length 다운로드 받을 길이. 전체 다운로드시 0 지정
+ @param completion 완료 핸들러. 성공시 data 반환. 실패시 error 반환.
+ @return NSProgress 반환. 실패시 NULL 반환
+ */
+- (NSProgress * _Nullable)downloadFile:(NSString * _Nonnull)remotePath
+                            toSavePath:(NSString * _Nonnull)savePath
+                                offset:(long long int)offset
+                                length:(long long int)length
+                            completion:(void (^ _Nonnull)(NSError * _Nullable error))completion;
+/**
+ FTP 경로에서 데이터 다운로드.
+ 
+ - 전체 파일을 데이터로 다운로드
+ - 반환된 NSProgress를 이용해 작업 취소 가능
+
+ @param remotePath Full path of remote file to download.
+ @param completion 완료 핸들러. 성공시 data 반환. 실패시 error 반환.
+ @return NSProgress 반환. 실패시 NULL 반환
+ */
+- (NSProgress * _Nullable)downloadFile:(NSString * _Nonnull)remotePath
+                            completion:(void (^ _Nonnull)(NSData * _Nullable data,
+                                                          NSError * _Nullable error))completion;
+/**
+ FTP 경로에서 offset/length를 지정해 필요한 만큼의 데이터 다운로드.
  
  - 반환된 NSProgress를 이용해 작업 취소 가능
 
@@ -213,7 +267,8 @@ typedef enum {
 - (NSProgress * _Nullable)downloadFile:(NSString * _Nonnull)remotePath
                                 offset:(long long int)offset
                                 length:(long long int)length
-                            completion:(void (^ _Nonnull)(NSData * _Nullable data, NSError * _Nullable error))completion;
+                            completion:(void (^ _Nonnull)(NSData * _Nullable data,
+                                                          NSError * _Nullable error))completion;
 
 /**
  Refer to downloadFile:to:progress:

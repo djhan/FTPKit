@@ -36,12 +36,12 @@
 #include <inttypes.h>
 
 /* FtpAccess() type codes */
-#define FTPLIB_DIR 1
-#define FTPLIB_DIR_VERBOSE 2
-#define FTPLIB_FILE_READ 3
-#define FTPLIB_FILE_READ_FROM 4
-#define FTPLIB_FILE_WRITE 5
-#define FTPLIB_ABORT 6
+#define FTPLIB_DIR                      1
+#define FTPLIB_DIR_VERBOSE              2
+#define FTPLIB_FILE_READ                3
+#define FTPLIB_FILE_READ_OFFSET         4
+#define FTPLIB_FILE_WRITE               9
+#define FTPLIB_ABORT                    99
 
 /* FtpAccess() mode codes */
 #define FTPLIB_ASCII 'A'
@@ -92,6 +92,24 @@ typedef struct FtpCallbackOptions {
     unsigned int bytesXferred;  /* callback if this number of bytes transferred */
     unsigned int idleTime;      /* callback if this many milliseconds have elapsed */
 } FtpCallbackOptions;
+
+struct NetBuf {
+    char *cput,*cget;
+    int handle;
+    int cavail,cleft;
+    char *buf;
+    int dir;
+    netbuf *ctrl;
+    netbuf *data;
+    int cmode;
+    struct timeval idletime;
+    FtpCallback idlecb;
+    void *idlearg;
+    unsigned long int xfered;
+    unsigned long int cbbytes;
+    unsigned long int xfered1;
+    char response[RESPONSE_BUFSIZ];
+};
 
 GLOBALREF int ftplib_debug;
 GLOBALREF void FtpInit(void);

@@ -85,24 +85,6 @@
 // FTP Parse 도입
 #import "ftpparse.h"
 
-struct NetBuf {
-    char *cput,*cget;
-    int handle;
-    int cavail,cleft;
-    char *buf;
-    int dir;
-    netbuf *ctrl;
-    netbuf *data;
-    int cmode;
-    struct timeval idletime;
-    FtpCallback idlecb;
-    void *idlearg;
-    unsigned long int xfered;
-    unsigned long int cbbytes;
-    unsigned long int xfered1;
-    char response[RESPONSE_BUFSIZ];
-};
-
 /*
  static char *version =
  "ftplib Release 4.0 07-Jun-2013, copyright 1996-2003, 2013 Thomas Pfau";
@@ -159,6 +141,7 @@ copy_service(struct servent *in)
     int i, len;
     struct servent *s;
     
+    if (in == NULL) return NULL;
     if (in == NULL) return NULL;
     
     s = (struct servent *)calloc(1, sizeof(struct servent));
@@ -1140,7 +1123,7 @@ GLOBALDEF int FtpAccess(const char *path,
             strcpy(buf,"RETR");
             dir = FTPLIB_READ;
             break;
-        case FTPLIB_FILE_READ_FROM:
+        case FTPLIB_FILE_READ_OFFSET:
             sprintf(buf, "REST %lld\r\nRETR", offset);
             dir = FTPLIB_READ;
             // REST 반환값은 3으로 확인
@@ -1817,7 +1800,7 @@ GLOBALDEF int FtpGetData(char **bufferData,
                            offset,
                            length,
                            nControl,
-                           FTPLIB_FILE_READ_FROM,
+                           FTPLIB_FILE_READ_OFFSET,
                            mode);
 }
 /*

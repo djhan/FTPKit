@@ -47,35 +47,14 @@
                                              password:@"shakamuth837"];
     
     // Sanity. Make sure the root path exists. This should always be true.
-//    BOOL success = [ftp directoryExistsAtPath:@"/"];
-//    XCTAssertTrue(success, @"");
-    
-    //NSLog(@"Privates 리스팅");
-    //NSArray *contents = [ftp listContentsAtPath:@"/0.Privates" showHiddenFiles:YES];
-//    NSArray *contents = [ftp getListContentsAtPath:@"/0.Privates" showHiddenFiles:YES];
-    //XCTAssertNil(contents, @"Directory should not exist");
-    //XCTAssertEqual(0, contents.count, @"");
-    
-    //NSLog(@"exr.zip 사이즈 확인");
-//    long long int bytes = [ftp fileSizeAtPath:@"/0.Privates/exr.zip"];
-    //XCTAssertTrue((bytes > 0), @"");
-    
-//    NSData *data = [ftp downloadFile:@"/0.Privates/exr.zip"
-//                              offset:10
-//                              length:1024
-//                            progress:^(NSUInteger received, NSUInteger totalBytes) {
-//    } failure:^(NSError * _Nullable error) {
-//
-//    }];
-//    NSLog(@"data size = %lu", [data length]);
-//    NSURL *url = [[NSURL alloc] initFileURLWithPath:@"/Users/djhan/Desktop/exr.zip"];
-//    [data writeToURL:url atomically:true];
+    BOOL success = [ftp directoryExistsAtPath:@"/"];
+    XCTAssertTrue(success, @"");
     
     XCTestExpectation *expectationDir = [self expectationWithDescription:@"Read Directory..."];
 
-    NSProgress *listingProgress = [ftp getListContentsAtPath:@"/0.Privates"
-                                             showHiddenFiles:false
-                                                  completion:^(NSArray<FTPItem *> * _Nullable items, NSError * _Nullable error) {
+    NSProgress *listingProgress = [ftp listContentsAtPath:@"/0.Privates"
+                                          showHiddenFiles:false
+                                               completion:^(NSArray<FTPItem *> * _Nullable items, NSError * _Nullable error) {
         if (error != NULL) {
             NSLog(@"리스팅 실패. error code = %li", error.code);
         }
@@ -92,35 +71,34 @@
     XCTestExpectation *expectationDownload = [self expectationWithDescription:@"Download File..."];
 
     NSProgress *downloadProgress = [ftp downloadFile:@"/0.Privates/exr.zip"
+                                          toSavePath:@"/Users/djhan/Desktop/exr.zip"
                                               offset:0
                                               length:1024
-                                          completion:^(NSData * _Nullable data, NSError * _Nullable error) {
+                                          completion:^(NSError * _Nullable error) {
+//    NSProgress *downloadProgress = [ftp downloadFile:@"/0.Privates/exr.zip"
+//                                              offset:0
+//                                              length:1024
+//                                          completion:^(NSData * _Nullable data, NSError * _Nullable error) {
         if (error != NULL) {
             NSLog(@"다운로드 실패. error code = %li", error.code);
         }
-        else {
-            NSLog(@"data size = %lu", [data length]);
-            NSURL *url = [[NSURL alloc] initFileURLWithPath:@"/Users/djhan/Desktop/exr.zip"];
-            [data writeToURL:url atomically:true];
-        }
+//        else {
+//            NSLog(@"data size = %lu", [data length]);
+//            NSURL *url = [[NSURL alloc] initFileURLWithPath:@"/Users/djhan/Desktop/exr.zip"];
+//            [data writeToURL:url atomically:true];
+//        }
         [expectationDownload fulfill];
     }];
     
     [self waitForExpectations:@[expectationDownload] timeout:21];
 
-//    bool result = [ftp downloadFile:@"/0.Privates/exr.zip"
-//                                 to:@"/Users/djhan/Desktop/exr.zip"
-//                           progress:NULL];
-    
     return;
 
 //    bytes = [ftp fileSizeAtPath:@"/copy.tgz"];
 //    XCTAssertEqual(-1, -1, @"");
-    
-    // Create 'test1.txt' file to upload. Contents are 'testing 1'.
-    NSURL *localUrl = [[[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject] URLByAppendingPathComponent:@"ftplib.tgz"];
-    
-//    NSLog(@"exr.zip 다운로드");
+//
+//    // Create 'test1.txt' file to upload. Contents are 'testing 1'.
+//    NSURL *localUrl = [[[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject] URLByAppendingPathComponent:@"ftplib.tgz"];
 //
 //    // Download 'ftplib.tgz'
 //    success = [ftp downloadFile:@"/0.Privates/exr.zip" to:localUrl.path progress:NULL];

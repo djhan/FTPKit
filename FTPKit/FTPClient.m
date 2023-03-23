@@ -311,10 +311,8 @@
                 break;
             }
 
-            // 현재 다운로드 버퍼 용량
-            long long int dbufLength = strlen(dbuf);
             // 예상 총 용량
-            long long int totalLength = progressed + dbufLength;
+            long long int totalLength = progressed + FTPLIB_BUFSIZ;
 
             // 파일 읽기가 아닌 경우
             // 즉, 디렉토리 읽기인 경우, bufferData의 메모리 증가가 필요한지 확인 필요
@@ -376,8 +374,8 @@
                     wasFailed = true;
             }
             
-            // progressed에 dbuf의 길이 추가
-            progressed += dbufLength;
+            // progressed에 현재 버퍼의 길이 추가
+            progressed += FTPLIB_BUFSIZ;
             // 데이터 파일을 읽는 경우는 진행상태 업데이트
             if (isReadData)
                 [xferProgress setCompletedUnitCount:progressed];

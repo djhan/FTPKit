@@ -37,8 +37,8 @@
             filePath = "FTPKit/FTPClient.m"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "589"
-            endingLineNumber = "589"
+            startingLineNumber = "587"
+            endingLineNumber = "587"
             landmarkName = "-listContentsAtPath:showHiddenFiles:completion:"
             landmarkType = "7">
             <Locations>

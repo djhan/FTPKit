@@ -1,10 +1,10 @@
 
 @interface FTPCredentials : NSObject
 
-@property (nonatomic, readonly) NSString *host;
+@property (nonatomic, readonly) NSString * _Nonnull host;
 @property (nonatomic, readonly) int port;
-@property (nonatomic, readonly) NSString *username;
-@property (nonatomic, readonly) NSString *password;
+@property (nonatomic, readonly) NSString * _Nonnull username;
+@property (nonatomic, readonly) NSString * _Nonnull password;
 
 /**
  Factory: Create credentials used for login.
@@ -15,7 +15,10 @@
  @param password User's password.
  @return FTPCredentials
  */
-+ (instancetype)credentialsWithHost:(NSString *)host port:(int)port username:(NSString *)username password:(NSString *)password;
++ (instancetype _Nonnull)credentialsWithHost:(NSString * _Nonnull)host
+                                        port:(int)port
+                                    username:(NSString * _Nonnull)username
+                                    password:(NSString * _Nonnull)password;
 
 /**
  Create credentials used for login.
@@ -26,7 +29,10 @@
  @param password User's password.
  @return FTPCredentials
  */
-- (id)initWithHost:(NSString *)host port:(int)port username:(NSString *)username password:(NSString *)password;
+- (id _Nonnull)initWithHost:(NSString * _Nonnull)host
+                       port:(int)port
+                   username:(NSString * _Nonnull)username
+                   password:(NSString * _Nonnull)password;
 
 /**
  Creates fully qualified FTP URL including schema, credentials and the absolute
@@ -35,6 +41,6 @@
  @param path Path to remote resource. The path should never contain schema, etc.
  @return NSURL URL for path.
  */
-- (NSURL *)urlForPath:(NSString *)path;
+- (NSURL * _Nullable)urlForPath:(NSString * _Nonnull)path;
 
 @end

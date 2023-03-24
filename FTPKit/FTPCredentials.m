@@ -33,6 +33,9 @@
     NSString *scheme = [NSString stringWithFormat:@"ftp://%@:%@@%@:%d", _username, _password, _host, _port];
     NSString *decoded = [path FTPKitURLDecodedString];
     NSString *encoded = [decoded isEqualToString:path] ? [path FTPKitURLEncodedString] : path;
+    if (encoded == NULL) {
+        return nil;
+    }
     NSURL *url = [NSURL URLWithString:[scheme stringByAppendingString:encoded]];
     return url;
 }

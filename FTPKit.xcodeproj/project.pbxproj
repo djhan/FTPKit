@@ -210,9 +210,9 @@
 				F27BA1F81802FF1800584A9E /* FTPClient.m */,
 				F27BA2051802FF1800584A9E /* FTPCredentials.h */,
 				F27BA2061802FF1800584A9E /* FTPCredentials.m */,
-				EECD1C1D29CD1B8600F3B000 /* Deprecated */,
 				072A829618CC2442001E640B /* Categories */,
 				072A82BA18CC48DE001E640B /* Libraries */,
+				EECD1C1D29CD1B8600F3B000 /* Deprecated */,
 				F27BA1D41802FE7E00584A9E /* Supporting Files */,
 			);
 			path = FTPKit;

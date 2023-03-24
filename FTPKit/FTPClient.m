@@ -935,7 +935,7 @@
     }
     return progress;
 }
-
+/*
 - (BOOL)uploadFile:(NSString *)localPath to:(NSString *)remotePath progress:(BOOL (^)(NSUInteger, NSUInteger))progress
 {
     netbuf *conn = [self connect];
@@ -970,7 +970,7 @@
         }
     });
 }
-
+*/
 - (BOOL)createDirectoryAtPath:(NSString *)remotePath
 {
     netbuf *conn = [self connect];

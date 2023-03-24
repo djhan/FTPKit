@@ -9,6 +9,7 @@
 #import <XCTest/XCTest.h>
 #import "FTPKit.h"
 #import "FTPKit+Protected.h"
+#import "NSDate+NSDate_Additions.h"
 
 @interface FTPKit_Tests : XCTestCase
 
@@ -52,8 +53,8 @@
     
     XCTestExpectation *expectationDir = [self expectationWithDescription:@"Read Directory..."];
 
-    NSProgress *listingProgress = [ftp listContentsAtPath:@"/0.Privates"
-                                          showHiddenFiles:false
+    NSProgress *listingProgress = [ftp listContentsAtPath:@"0.Privates"
+                                          showHiddenFiles:true
                                                completion:^(NSArray<FTPItem *> * _Nullable items, NSError * _Nullable error) {
         if (error != NULL) {
             NSLog(@"리스팅 실패. error code = %li", error.code);
@@ -61,7 +62,7 @@
         else {
             for (NSInteger i = 0; i < [items count]; i++) {
                 FTPItem *item = items[i];
-                NSLog(@"%@\n", [item filename]);
+                NSLog(@"%@ (%@), %hhd, %hhd\n", [item filename], [[item modificationDate] string], [item isDir], [item isHidden]);
             }
         }
         [expectationDir fulfill];
@@ -94,8 +95,8 @@
     
     XCTestExpectation *expectationUpload = [self expectationWithDescription:@"Upload File..."];
 
-    NSProgress *uploadProgress = [ftp uploadFileFrom:@"/Users/djhan/Downloads/튠잇투자제안서_장표추가_A ven_song06_220523_v001.pptx.zip"
-                                                  to:@"/0.Privates/튠잇투자제안서_장표추가_A ven_song06_220523_v001.pptx.zip"
+    NSProgress *uploadProgress = [ftp uploadFileFrom:@"/Volumes/Data/test.zip"
+                                                  to:@"/0.Privates/test_up.zip"
                                           completion:^(NSError * _Nullable error) {
         if (error != NULL) {
             NSLog(@"업로드 실패. error code = %li", error.code);

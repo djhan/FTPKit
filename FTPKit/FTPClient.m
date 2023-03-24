@@ -2,6 +2,7 @@
 #import "FTPKit+Protected.h"
 #import "FTPClient.h"
 #import "NSError+Additions.h"
+#import "NSString+Additions.h"
 
 // MARK: - FTPItem Class -
 /**
@@ -100,14 +101,14 @@
 // */
 //- (void)returnFailureLastError:(void (^)(NSError * _Nonnull error))failure;
 
-/**
- URL encode a path.
- 
- This method is used only on _existing_ files on the FTP server.
- 
- @param path The path to URL encode.
- */
-- (NSString * _Nonnull)urlEncode:(NSString * _Nonnull)path;
+///**
+// URL encode a path.
+//
+// This method is used only on _existing_ files on the FTP server.
+//
+// @param path The path to URL encode.
+// */
+//- (NSString * _Nonnull)urlEncode:(NSString * _Nonnull)path;
 
 @end
 
@@ -239,8 +240,7 @@
             if (progressed > fileSize)
                 progressed = fileSize;
             [progress setCompletedUnitCount:progressed];
-            
-            NSLog(@"전송률 = %f", progress.fractionCompleted);
+            //NSLog(@"전송률 = %f", progress.fractionCompleted);
         }
 
         // nData 를 닫는다
@@ -601,29 +601,16 @@
 }
 
 // MARK: - Methods
-
+/*
 - (NSString *)urlEncode:(NSString *)path {
     return [path stringByRemovingPercentEncoding];
     //return [path stringByReplacingPercentEscapesUsingEncoding:_encoding];
-}
+}*/
 
-/// 로컬 파일 크기 구하기.
-- (long long int)localFileSizeAtPath:(NSString *)path {
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    if ([fileManager fileExistsAtPath:path] == false) {
-        return 0;
-    }
-    NSError *error = NULL;
-    NSDictionary *fileAttributes = [[NSFileManager defaultManager] attributesOfItemAtPath:path error:&error];
-    if (error != NULL) {
-        NSLog(@"Error = %@", [error description]);
-        return 0;
-    }
-    return [[fileAttributes objectForKey:NSFileSize] longLongValue];
-}
 /// FTP 파일 크기 구하기.
 - (long long int)fileSizeAtPath:(NSString *)path {
-    const char *cPath = [[self urlEncode:path] cStringUsingEncoding:_encoding];
+    //const char *cPath = [[self urlEncode:path] cStringUsingEncoding:_encoding];
+    const char *cPath = [[path urlEncodedString] cStringUsingEncoding:_encoding];
     return [self fileSizeAt:cPath];
 }
 /**
@@ -711,8 +698,8 @@
         return NULL;
     }
 
-    const char *path = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
-    
+    //const char *path = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
+    const char *path = [[remotePath urlEncodedString] cStringUsingEncoding:_encoding];
     NSProgress *progress = [self ftpXferReadDataFrom:path
                                               toPath:NULL
                                               offset:0
@@ -793,7 +780,8 @@
         return NULL;
     }
         
-    const char *path = [[self urlEncode:remotePath] cStringUsingEncoding:self.encoding];
+    //const char *path = [[self urlEncode:remotePath] cStringUsingEncoding:self.encoding];
+    const char *path = [[remotePath urlEncodedString] cStringUsingEncoding:self.encoding];
     const char *saveFilePath = [savePath cStringUsingEncoding:_encoding];
     if (path == NULL ||
         saveFilePath == NULL) {
@@ -878,7 +866,8 @@
         return NULL;
     }
     
-    const char *path = [[self urlEncode:remotePath] cStringUsingEncoding:self.encoding];
+    //const char *path = [[self urlEncode:remotePath] cStringUsingEncoding:self.encoding];
+    const char *path = [[remotePath urlEncodedString] cStringUsingEncoding:self.encoding];
     if (path == NULL) {
         // 파일 열기 실패
         completion(NULL, [NSError FTPKitErrorWithCode:FTP_FailedToOpenFile]);
@@ -936,15 +925,16 @@
         return NULL;
     }
 
-    long long int fileSize = [self localFileSizeAtPath:localPath];
+    long long int fileSize = [localPath fileSize];
     if (fileSize == 0) {
         completion([NSError FTPKitErrorWithCode:FTP_ZeroFileSize]);
         return NULL;
     }
     
-    const char *fromLocalPath = [[self urlEncode:localPath] cStringUsingEncoding:NSUTF8StringEncoding];
-    const char *toSavePath = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
-    
+    //const char *fromLocalPath = [[self urlEncode:localPath] cStringUsingEncoding:NSUTF8StringEncoding];
+    //const char *toSavePath = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
+    const char *fromLocalPath = [[localPath urlEncodedString] cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *toSavePath = [[remotePath urlEncodedString] cStringUsingEncoding:_encoding];
     NSProgress *progress = [self ftpXferWriteFrom:fromLocalPath
                                              size:fileSize
                                            toPath:toSavePath
@@ -1024,7 +1014,8 @@
     if (conn == NULL) {
         return [NSError FTPKitErrorWithCode:FTP_CannotConnectToServer];
     }
-    const char *path = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
+    //const char *path = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
+    const char *path = [[remotePath urlEncodedString] cStringUsingEncoding:_encoding];
     int stat = 0;
     // 파일인 경우
     if (isFile) {
@@ -1062,7 +1053,8 @@
                                                              forKey:NSLocalizedDescriptionKey];
         return [[NSError alloc] initWithDomain:FTPErrorDomain code:0 userInfo:userInfo];
     }
-    NSString *command = [NSString stringWithFormat:@"SITE CHMOD %i %@", mode, [self urlEncode:remotePath]];
+    //NSString *command = [NSString stringWithFormat:@"SITE CHMOD %i %@", mode, [self urlEncode:remotePath]];
+    NSString *command = [NSString stringWithFormat:@"SITE CHMOD %i %@", mode, [remotePath urlEncodedString]];
     netbuf *conn = [self connect];
     if (conn == NULL) {
         return [NSError FTPKitErrorWithCode:FTP_CannotConnectToServer];
@@ -1090,7 +1082,8 @@
     if (conn == NULL) {
         return [NSError FTPKitErrorWithCode:FTP_CannotConnectToServer];
     }
-    const char *src = [[self urlEncode:sourcePath] cStringUsingEncoding:_encoding];
+    //const char *src = [[self urlEncode:sourcePath] cStringUsingEncoding:_encoding];
+    const char *src = [[sourcePath urlEncodedString] cStringUsingEncoding:_encoding];
     // @note The destination path does not need to be URL encoded. In fact, if
     // it is, the filename will include the percent escaping!
     const char *dst = [destPath cStringUsingEncoding:_encoding];
@@ -1247,7 +1240,7 @@
             long int size = parsed->size;
             NSDate *modificationDate = NULL;
             if (parsed->mtimetype != FTPPARSE_MTIME_UNKNOWN) {
-                [NSDate dateWithTimeIntervalSince1970:parsed->mtime];
+                modificationDate = [NSDate dateWithTimeIntervalSince1970:parsed->mtime];
             }
 
             FTPItem *item = [[FTPItem alloc] initWithFilename:filename
@@ -1270,7 +1263,8 @@
     if (conn == NULL) {
         return NULL;
     }
-    const char *cPath = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
+    //const char *cPath = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
+    const char *cPath = [[remotePath urlEncodedString] cStringUsingEncoding:_encoding];
     char dt[kFTPKitRequestBufferSize];
     // This is returning FALSE when attempting to create a new folder that exists... why?
     // MDTM does not work with folders. It is meant to be used only for types

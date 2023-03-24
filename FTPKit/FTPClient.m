@@ -231,7 +231,7 @@
             {
                 wasFailed = true;
                 wasAborted = true;
-                [self cancelOperation:nControl];
+                [self stopOperation:nControl];
                 break;
             }
             
@@ -426,7 +426,7 @@
                 wasFailed = true;
                 wasAborted = true;
                 // 작업 중지 처리
-                [self cancelOperation:nControl];
+                [self stopOperation:nControl];
                 break;
             }
 
@@ -453,7 +453,7 @@
                         wasFailed = true;
                         free(tempBuffer);
                         // 작업 중지 처리
-                        [self cancelOperation:nControl];
+                        [self stopOperation:nControl];
                         break;
                     }
                 }
@@ -511,7 +511,7 @@
                 if (isEndOfFile == true)
                     wasAborted = true;
                 // 작업 중지 처리
-                [self cancelOperation:nControl];
+                [self stopOperation:nControl];
                 break;
             }
             
@@ -520,7 +520,7 @@
             {
                 wasAborted = true;
                 // 작업 중지 처리
-                [self cancelOperation:nControl];
+                [self stopOperation:nControl];
                 break;
             }
         }
@@ -588,14 +588,14 @@
                 // 아닌 경우 - 디렉토리를 읽는 경우
                 else
                 {
-                    if (length <= 0)
+                    if (progressed <= 0)
                     {
                         // 데이터 길이가 0인 경우
                         NSError *error = [NSError FTPKitErrorWithCode:FTP_FailedToReadByUnknown];
                         completion(NULL, error);
                     }
                     else
-                        completion([[NSData alloc] initWithBytes:bufferData length:length], NULL);
+                        completion([[NSData alloc] initWithBytes:bufferData length:progressed], NULL);
                 }
             }
         }
@@ -672,7 +672,10 @@
     return (long long int)bytes;
 }
 
-- (BOOL)cancelOperation:(netbuf * _Nullable)conn {
+/**
+ 특정 Connection의 FTP 작업 중지
+ */
+- (BOOL)stopOperation:(netbuf * _Nullable)conn {
     if (conn == NULL)
         return false;
     NSString *command = [NSString stringWithFormat:@"ABOR"];

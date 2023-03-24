@@ -188,8 +188,6 @@
     {
         strncpy(nControl->response, strerror(errno),
                 sizeof(nControl->response));
-        // 파일 열기 실패로 처리
-        completion([NSError FTPKitErrorWithCode:FTP_FailedToOpenFile]);
         return NULL;
     }
 
@@ -205,8 +203,6 @@
             fclose(local);
             unlink(fromPath);
         }
-        // 접속 실패로 처리
-        completion([NSError FTPKitErrorWithCode:FTP_CannotConnectToServer]);
         return NULL;
     }
 
@@ -312,8 +308,6 @@
         type != FTPLIB_FILE_READ_OFFSET &&
         type != FTPLIB_DIR &&
         type != FTPLIB_DIR_VERBOSE)
-        // 잘못된 작업 지정
-        completion(NULL, [NSError FTPKitErrorWithCode:FTP_AccessWrongType]);
         return NULL;;
     
     // 데이터 읽기 작업인지 여부
@@ -337,13 +331,11 @@
         // 전체 크기가 0 또는 그보다 작은 경우 중지 처리
         if (fullLength <= 0)
         {
-            completion(NULL, [NSError FTPKitErrorWithCode:FTP_FailedToReadByWrongSize]);
             return NULL;
         }
         // offset 이 전체 크기보다 큰 경우도 중지 처리
         if (offset > fullLength)
         {
-            completion(NULL, [NSError FTPKitErrorWithCode:FTP_FailedToReadByWrongSize]);
             return NULL;
         }
         // 다운로드 길이가 정해진 경우
@@ -370,8 +362,6 @@
         {
             strncpy(nControl->response, strerror(errno),
                     sizeof(nControl->response));
-            // 파일 열기에 실패
-            completion(NULL, [NSError FTPKitErrorWithCode:FTP_FailedToOpenFile]);
             return NULL;
         }
     }
@@ -389,8 +379,6 @@
             if (savePath != NULL)
                 fclose(local);
         }
-        // 접속 실패
-        completion(NULL, [NSError FTPKitErrorWithCode:FTP_CannotConnectToServer]);
         return NULL;
     }
     
@@ -999,42 +987,7 @@
     }
     return progress;
 }
-/*
-- (BOOL)uploadFile:(NSString *)localPath to:(NSString *)remotePath progress:(BOOL (^)(NSUInteger, NSUInteger))progress
-{
-    netbuf *conn = [self connect];
-    if (conn == NULL)
-        return NO;
-    const char *input = [localPath cStringUsingEncoding:NSUTF8StringEncoding];
-    const char *path = [remotePath cStringUsingEncoding:_encoding];
-    // @todo Send w/ appropriate mode. FTPLIB_ASCII | FTPLIB_BINARY
-    int stat = FtpPut(input, path, FTPLIB_BINARY, conn);
-    // @todo Use 'progress' block.
-    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
-    FtpQuit(conn);
-    if (stat == 0) {
-        // Invalid path, wrong permissions, etc. Make sure that permissions are
-        // set corectly on the path AND the path of the initialPath is correct.
-        self.lastError = [NSError FTPKitErrorWithResponse:response];
-        return NO;
-    }
-    return YES;
-}
 
-- (void)uploadFile:(NSString *)localPath to:(NSString *)remotePath progress:(BOOL (^)(NSUInteger, NSUInteger))progress success:(void (^)(void))success failure:(void (^)(NSError *))failure
-{
-    dispatch_async(_queue, ^{
-        BOOL ret = [self uploadFile:localPath to:remotePath progress:progress];
-        if (ret && success) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                success();
-            });
-        } else if (! ret && failure) {
-            [self returnFailureLastError:failure];
-        }
-    });
-}
-*/
 - (BOOL)createDirectoryAtPath:(NSString *)remotePath
 {
     netbuf *conn = [self connect];

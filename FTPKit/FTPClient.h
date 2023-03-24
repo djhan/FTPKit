@@ -23,12 +23,21 @@ typedef enum {
     // 성공시
     FTP_Success                     = 0,
 
+    // 잘못된 작업 지정
+    FTP_AccessWrongType             = 10,
+    // 읽기/쓰기 파일을 여는데 실패
+    FTP_FailedToOpenFile            = 11,
+    // 파일 크기가 0
+    FTP_ZeroFileSize                = 12,
+
     // 알 수 없는 이유로 읽기 실패
     FTP_FailedToReadByUnknown       = 20,
     // 파일 불완전 읽기로 실패
     FTP_FailedToReadByIncomplete    = 21,
     // 파일 로컬 저장에 실패
     FTP_FailedToSaveToLocal         = 22,
+    // offset / length 를 잘못 지정
+    FTP_FailedToReadByWrongSize     = 20,
 
     // 파일 업로드에 실패
     FTP_FailedToUploadFile          = 30,
@@ -223,36 +232,6 @@ typedef enum {
 - (NSProgress * _Nullable)uploadFileFrom:(NSString * _Nonnull)localPath
                                       to:(NSString * _Nonnull)remotePath
                               completion:(void (^ _Nonnull)(NSError * _Nullable error))completion;
-/**
- Upload file to specific directory on remote server.
- 
- @param localPath Path of local file to upload.
- @param toPath Remote path where file will be uploaded to.
- @param progress Calls after data has been sent to remote server.
-        Return NO to cancel the operation.
- @return YES on success. NO on failure.
- */
-- (BOOL)uploadFile:(NSString * _Nonnull)localPath
-                to:(NSString * _Nonnull)remotePath
-          progress:(BOOL (^ _Nullable)(NSUInteger sent, NSUInteger totalBytes))progress;
-
-/**
- Refer to uploadFile:to:progress:
- 
- This adds the ability to perform the operation asynchronously.
- 
- @param localPath Path of local file to upload.
- @param toPath Remote path where file will be uploaded to.
- @param progress Calls after data has been sent to remote server.
-        Return NO to cancel the operation.
- @param success Method called when process succeeds.
- @param failure Method called when process fails.
- */
-- (void)uploadFile:(NSString * _Nonnull)localPath
-                to:(NSString * _Nonnull)remotePath
-          progress:(BOOL (^ _Nullable)(NSUInteger sent, NSUInteger totalBytes))progress
-           success:(void (^ _Nonnull)(void))success
-           failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Create directory at the specified path on the remote server.

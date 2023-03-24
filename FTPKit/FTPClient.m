@@ -188,7 +188,9 @@
     {
         strncpy(nControl->response, strerror(errno),
                 sizeof(nControl->response));
-        return nil;
+        // 파일 열기 실패로 처리
+        completion([NSError FTPKitErrorWithCode:FTP_FailedToOpenFile]);
+        return NULL;
     }
 
     // nData를 NULL로 선언
@@ -203,6 +205,8 @@
             fclose(local);
             unlink(fromPath);
         }
+        // 접속 실패로 처리
+        completion([NSError FTPKitErrorWithCode:FTP_CannotConnectToServer]);
         return NULL;
     }
 
@@ -220,7 +224,7 @@
         int input = 0;
         int write = 0;
 
-        // 다운로드 버퍼 초기화
+        // 버퍼 초기화
         char *dbuf = malloc(FTPLIB_BUFSIZ);
         // 전송된 파일 길이
         long long int progressed = 0;
@@ -308,6 +312,8 @@
         type != FTPLIB_FILE_READ_OFFSET &&
         type != FTPLIB_DIR &&
         type != FTPLIB_DIR_VERBOSE)
+        // 잘못된 작업 지정
+        completion(NULL, [NSError FTPKitErrorWithCode:FTP_AccessWrongType]);
         return NULL;;
     
     // 데이터 읽기 작업인지 여부
@@ -330,11 +336,16 @@
         
         // 전체 크기가 0 또는 그보다 작은 경우 중지 처리
         if (fullLength <= 0)
+        {
+            completion(NULL, [NSError FTPKitErrorWithCode:FTP_FailedToReadByWrongSize]);
             return NULL;
+        }
         // offset 이 전체 크기보다 큰 경우도 중지 처리
         if (offset > fullLength)
+        {
+            completion(NULL, [NSError FTPKitErrorWithCode:FTP_FailedToReadByWrongSize]);
             return NULL;
-        
+        }
         // 다운로드 길이가 정해진 경우
         if (length > 0)
         {
@@ -359,6 +370,8 @@
         {
             strncpy(nControl->response, strerror(errno),
                     sizeof(nControl->response));
+            // 파일 열기에 실패
+            completion(NULL, [NSError FTPKitErrorWithCode:FTP_FailedToOpenFile]);
             return NULL;
         }
     }
@@ -376,6 +389,8 @@
             if (savePath != NULL)
                 fclose(local);
         }
+        // 접속 실패
+        completion(NULL, [NSError FTPKitErrorWithCode:FTP_CannotConnectToServer]);
         return NULL;
     }
     
@@ -674,6 +689,8 @@
 
 /**
  특정 Connection의 FTP 작업 중지
+ 
+ @returns 결과를 true / false 로 반환
  */
 - (BOOL)stopOperation:(netbuf * _Nullable)conn {
     if (conn == NULL)
@@ -685,6 +702,30 @@
         return false;
     }
     return true;
+}
+/**
+ 특정 Connection의 FTP 작업 중지
+ 
+ 백그라운드 쓰레드로 중지 처리
+ 
+ @returns 결과를 완료 핸들러로 반환
+ */
+- (void)stopOperation:(netbuf * _Nullable)conn
+           completion:(void (^ _Nonnull)(bool success))completion
+{
+    if (conn == NULL) {
+        completion(false);
+        return;
+    }
+    NSString *command = [NSString stringWithFormat:@"ABOR"];
+    BOOL success = [self sendCommand:command conn:conn];
+
+    if (success) {
+        completion(true);
+    }
+    else {
+        completion(false);
+    }
 }
 
 /**
@@ -705,13 +746,13 @@
     const char *path = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
     
     NSProgress *progress = [self ftpXferReadDataFrom:path
-                                            toPath:NULL
-                                            offset:0
-                                            length:0
-                                           control:conn
-                                              type:FTPLIB_DIR_VERBOSE
-                                              mode:FTPLIB_ASCII
-                                        completion:^(NSData * _Nullable data, NSError * _Nullable error) {
+                                              toPath:NULL
+                                              offset:0
+                                              length:0
+                                             control:conn
+                                                type:FTPLIB_DIR_VERBOSE
+                                                mode:FTPLIB_ASCII
+                                          completion:^(NSData * _Nullable data, NSError * _Nullable error) {
         if (error != NULL) {
             // 에러 발생시, 그대로 에러 반환
             completion(NULL, error);
@@ -862,11 +903,19 @@
 {
     netbuf *conn = [self connect];
     if (conn == NULL)
+    {
+        // 접속 실패
+        completion(NULL, [NSError FTPKitErrorWithCode:FTP_CannotConnectToServer]);
         return NULL;
+    }
     
     const char *path = [[self urlEncode:remotePath] cStringUsingEncoding:self.encoding];
     if (path == NULL)
+    {
+        // 접속 실패
+        completion(NULL, [NSError FTPKitErrorWithCode:FTP_FailedToOpenFile]);
         return NULL;
+    }
     
     int type = FTPLIB_FILE_READ;
     if (offset > 0) {
@@ -887,8 +936,7 @@
     if (progress == NULL)
     {
         // 완료 핸들러 종료
-        NSError *error = [NSError FTPKitErrorWithCode:FTP_CannotConnectToServer];
-        completion(NULL, error);
+        completion(NULL, [NSError FTPKitErrorWithCode:FTP_CannotConnectToServer]);
         return NULL;
     }
     return progress;
@@ -910,12 +958,26 @@
 {
     netbuf *conn = [self connect];
     if (conn == NULL)
-        return NULL;
-    
-    long long int fileSize = [self localFileSizeAtPath:localPath];
-    if (fileSize == 0) {
+    {
+        // 접속 실패
+        completion([NSError FTPKitErrorWithCode:FTP_CannotConnectToServer]);
         return NULL;
     }
+    
+    if ([[NSFileManager defaultManager] fileExistsAtPath:localPath] == false)
+    {
+        // 파일 열기 실패
+        completion([NSError FTPKitErrorWithCode:FTP_FailedToOpenFile]);
+        return NULL;
+    }
+
+    long long int fileSize = [self localFileSizeAtPath:localPath];
+    if (fileSize == 0)
+    {
+        completion([NSError FTPKitErrorWithCode:FTP_ZeroFileSize]);
+        return NULL;
+    }
+    
     const char *fromLocalPath = [[self urlEncode:localPath] cStringUsingEncoding:NSUTF8StringEncoding];
     const char *toSavePath = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
     
@@ -932,8 +994,7 @@
     if (progress == NULL)
     {
         // 완료 핸들러 종료
-        NSError *error = [NSError FTPKitErrorWithCode:FTP_CannotConnectToServer];
-        completion(error);
+        completion([NSError FTPKitErrorWithCode:FTP_CannotConnectToServer]);
         return NULL;
     }
     return progress;

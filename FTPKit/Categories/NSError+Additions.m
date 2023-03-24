@@ -5,11 +5,46 @@ NSString *const FTPErrorDomain = @"FTPKit";
 
 @implementation NSError (NSError_FTPKitAdditions)
 
-+ (NSString *)FTPKitErrorMessageFromCode:(int)errorCode
-{
++ (NSString *)FTPKitErrorMessageFromCode:(int)errorCode {
     // http://en.wikipedia.org/wiki/List_of_FTP_server_return_codes
 	NSString *message = NSLocalizedString(@"Undefined error has occurred.", @"");
 	switch (errorCode) {
+        // Custom Error Code
+        case 0:
+            message = NSLocalizedString(@"Process was succeed.", @"");
+            break;
+        case 10:
+            message = NSLocalizedString(@"You can't process this type of work.", @"");
+            break;
+        case 11:
+            message = NSLocalizedString(@"Can't open local file to process work.", @"");
+            break;
+        case 12:
+            message = NSLocalizedString(@"File size is empty.", @"");
+            break;
+        case 20:
+            message = NSLocalizedString(@"Download was failed by unknwon reason.", @"");
+            break;
+        case 21:
+            message = NSLocalizedString(@"Download was incompleted.", @"");
+            break;
+        case 22:
+            message = NSLocalizedString(@"Failed to save downloaded file.", @"");
+            break;
+        case 23:
+            message = NSLocalizedString(@"You set wrong offset or wrong file size.", @"");
+            break;
+        case 30:
+            message = NSLocalizedString(@"Failed to upload file.", @"");
+            break;
+        case 99:
+            message = NSLocalizedString(@"Can't connect to FTP server.", @"");
+            break;
+        case 100:
+            message = NSLocalizedString(@"User abort FTP work.", @"");
+            break;
+
+        // FTP Error Code
 		case 331:
 			message = NSLocalizedString(@"User name okay, need password.", @"");
 			break;
@@ -107,15 +142,13 @@ NSString *const FTPErrorDomain = @"FTPKit";
 	return message;
 }
 
-+ (NSError *)FTPKitErrorWithCode:(int)errorCode
-{
++ (NSError *)FTPKitErrorWithCode:(int)errorCode {
     NSDictionary *userInfo = [NSDictionary dictionaryWithObject:[NSError FTPKitErrorMessageFromCode:errorCode]
                                                          forKey:NSLocalizedDescriptionKey];
 	return [[NSError alloc] initWithDomain:FTPErrorDomain code:errorCode userInfo:userInfo];
 }
 
-+ (NSError *)FTPKitErrorWithResponse:(NSString *)response
-{
++ (NSError *)FTPKitErrorWithResponse:(NSString *)response {
     // Extract the code and message from the reponse message.
     // Ex: '500 Server error'
     NSMutableArray *components = [[response componentsSeparatedByString:@" "] mutableCopy];

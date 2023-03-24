@@ -37,15 +37,15 @@ typedef enum {
     // 파일 로컬 저장에 실패
     FTP_FailedToSaveToLocal         = 22,
     // offset / length 를 잘못 지정
-    FTP_FailedToReadByWrongSize     = 20,
+    FTP_FailedToReadByWrongSize     = 23,
 
     // 파일 업로드에 실패
     FTP_FailedToUploadFile          = 30,
 
     // 접속 불가
-    FTP_CannotConnectToServer       = 998,
+    FTP_CannotConnectToServer       = 98,
     // 사용자 중지
-    FTP_Aborted                     = 999,
+    FTP_Aborted                     = 99,
     
 } FTPErrorCode;
 

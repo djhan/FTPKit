@@ -234,31 +234,29 @@ typedef enum {
                               completion:(void (^ _Nonnull)(NSError * _Nullable error))completion;
 
 /**
- Create directory at the specified path on the remote server.
+ 서버의 remotePath 위치에 디렉토리 생성.
  
  @param remotePath Path to create remote directory.
- @return YES on success. NO on failure.
+ @return 성공시 NULL 반환. 실패시 에러값 반환
  */
-- (BOOL)createDirectoryAtPath:(NSString * _Nonnull)remotePath;
+- (NSError * _Nullable)createDirectoryAtPath:(NSString * _Nonnull)remotePath;
 
 /**
- Refer to createDirectoryAtPath:
- 
+ 백그라운드 쓰레드로 서버의 remotePath 위치에 디렉토리 생성.
+
  @param remotePath Path to create remote directory.
- @param success Method called when process succeeds.
- @param failure Method called when process fails.
+ @param completion 완료 핸들러. 실패시 에러 반환
  */
 - (void)createDirectoryAtPath:(NSString * _Nonnull)remotePath
-                      success:(void (^ _Nonnull)(void))success
-                      failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
+                   completion:(void (^ _Nonnull)(NSError * _Nullable))completion;
 
 /**
- Delete directory at specified remote path.
- 
+ 서버의 remotePath 위치의 디렉토리 제거.
+
  @param remotePath The path of the remote directory to delete.
- @return YES on success. NO on failure.
+ @return 성공시 NULL 반환. 실패시 에러값 반환
  */
-- (BOOL)deleteDirectoryAtPath:(NSString * _Nonnull)remotePath;
+- (NSError * _Nullable)deleteDirectoryAtPath:(NSString * _Nonnull)remotePath;
 
 /**
  Refer to deleteDirectoryAtPath:
@@ -266,20 +264,18 @@ typedef enum {
  This adds the ability to perform the operation asynchronously.
  
  @param remotePath The path of the remote directory to delete.
- @param success Method called when process succeeds.
- @param failure Method called when process fails.
+ @param completion 완료 핸들러. 실패시 에러 반환
  */
 - (void)deleteDirectoryAtPath:(NSString * _Nonnull)remotePath
-                      success:(void (^ _Nonnull)(void))success
-                      failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
+                   completion:(void (^ _Nonnull)(NSError * _Nullable))completion;
 
 /**
  Delete a file at a specified remote path.
  
  @param remotePath The path to the remote resource to delete.
- @return YES on success. NO on failure.
+ @return 성공시 NULL 반환. 실패시 에러값 반환.
  */
-- (BOOL)deleteFileAtPath:(NSString * _Nonnull)remotePath;
+- (NSError * _Nullable)deleteFileAtPath:(NSString * _Nonnull)remotePath;
 
 /**
  Refer to deleteFileAtPath:
@@ -287,22 +283,19 @@ typedef enum {
  This adds the ability to perform the operation asynchronously.
  
  @param remotePath The path to the remote resource to delete.
- @param success Method called when process succeeds.
- @param failure Method called when process fails.
- @return FTPRequest The request instance.
+ @param completion 완료 핸들러. 실패시 에러 반환
  */
 - (void)deleteFileAtPath:(NSString * _Nonnull)remotePath
-                 success:(void (^ _Nonnull)(void))success
-                 failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
+              completion:(void (^ _Nonnull)(NSError * _Nullable))completion;
 
 /**
  Change file mode of a remote file or directory.
  
  @param remotePath Full path to remote resource.
  @param mode File mode to change to.
- @return YES on success. NO on failure.
+ @return 성공시 NULL 반환. 실패시 에러값 반환
  */
-- (BOOL)chmodPath:(NSString * _Nonnull)remotePath toMode:(int)mode;
+- (NSError * _Nullable)chmodPath:(NSString * _Nonnull)remotePath toMode:(int)mode;
 
 /**
  Refer to chmodPath:toMode:
@@ -311,13 +304,11 @@ typedef enum {
  
  @param remotePath Full path to remote resource.
  @param mode File mode to change to.
- @param success Method called when process succeeds.
- @param failure Method called when process fails.
+ @param completion 완료 핸들러. 실패시 에러 반환
  */
 - (void)chmodPath:(NSString * _Nonnull)remotePath
            toMode:(int)mode
-          success:(void (^ _Nonnull)(void))success
-          failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
+       completion:(void (^ _Nonnull)(NSError * _Nullable error))completion;
 
 /**
  Rename a remote path to something else. This method can be used to move a
@@ -326,8 +317,8 @@ typedef enum {
  @param sourcePath Source path to rename.
  @param destPath Destination of renamed file.
  */
-- (BOOL)renamePath:(NSString * _Nonnull)sourcePath
-                to:(NSString * _Nonnull)destPath;
+- (NSError * _Nullable)renamePath:(NSString * _Nonnull)sourcePath
+                               to:(NSString * _Nonnull)destPath;
 
 /**
  Refer to renamePath:to:
@@ -336,13 +327,11 @@ typedef enum {
  
  @param sourcePath Source path to rename.
  @param destPath Destination of renamed file.
- @param success Method called when process succeeds.
- @param failure Method called when process fails.
+ @param completion 완료 핸들러. 실패시 에러 반환
  */
 - (void)renamePath:(NSString * _Nonnull)sourcePath
                 to:(NSString * _Nonnull)destPath
-           success:(void (^ _Nonnull)(void))success
-           failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
+        completion:(void (^ _Nonnull)(NSError * _Nullable error))completion;
 
 /**
  Returns the last modification date of remotePath. This will NOT work with
@@ -403,9 +392,9 @@ typedef enum {
  you will be able to issue commands in the cwd. Not right now.
  
  @param remotePath Remote directory path to make current directory.
- @return YES if the directory was successfully changed.
+ @return 성공시 NULL 반환. 실패시 에러 반환
  */
-- (BOOL)changeDirectoryToPath:(NSString * _Nonnull)remotePath;
+- (NSError * _Nullable)changeDirectoryToPath:(NSString * _Nonnull)remotePath;
 
 /**
  Returns the current working directory.

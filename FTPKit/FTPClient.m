@@ -912,6 +912,12 @@
                                       to:(NSString * _Nonnull)remotePath
                               completion:(void (^ _Nonnull)(NSError * _Nullable error))completion
 {
+    if ([[NSFileManager defaultManager] fileExistsAtPath:localPath] == false) {
+        // 파일 열기 실패
+        completion([NSError FTPKitErrorWithCode:FTP_FailedToOpenFile]);
+        return NULL;
+    }
+
     netbuf *conn = [self connect];
     if (conn == NULL) {
         // 접속 실패
@@ -919,12 +925,6 @@
         return NULL;
     }
     
-    if ([[NSFileManager defaultManager] fileExistsAtPath:localPath] == false) {
-        // 파일 열기 실패
-        completion([NSError FTPKitErrorWithCode:FTP_FailedToOpenFile]);
-        return NULL;
-    }
-
     long long int fileSize = [localPath fileSize];
     if (fileSize == 0) {
         completion([NSError FTPKitErrorWithCode:FTP_ZeroFileSize]);

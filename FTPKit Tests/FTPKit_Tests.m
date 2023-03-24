@@ -90,7 +90,25 @@
         [expectationDownload fulfill];
     }];
     
-    [self waitForExpectations:@[expectationDownload] timeout:21];
+    [self waitForExpectations:@[expectationDownload] timeout:10];
+    
+    XCTestExpectation *expectationUpload = [self expectationWithDescription:@"Upload File..."];
+
+    NSProgress *uploadProgress = [ftp uploadFileFrom:@"/Users/djhan/Downloads/튠잇투자제안서_장표추가_A ven_song06_220523_v001.pptx.zip"
+                                                  to:@"/0.Privates/튠잇투자제안서_장표추가_A ven_song06_220523_v001.pptx.zip"
+                                          completion:^(NSError * _Nullable error) {
+        if (error != NULL) {
+            NSLog(@"업로드 실패. error code = %li", error.code);
+        }
+        [expectationUpload fulfill];
+    }];
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        NSLog(@"업로드 중지...");
+        [uploadProgress cancel];
+    });
+    
+    [self waitForExpectations:@[expectationUpload] timeout:30];
 
     return;
 

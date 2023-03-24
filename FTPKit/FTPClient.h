@@ -10,7 +10,7 @@
  
  */
 
-#import "FTPHandle.h"
+#import "ftplib.h"
 #import "FTPCredentials.h"
 
 
@@ -29,6 +29,9 @@ typedef enum {
     FTP_FailedToReadByIncomplete    = 21,
     // 파일 로컬 저장에 실패
     FTP_FailedToSaveToLocal         = 22,
+
+    // 파일 업로드에 실패
+    FTP_FailedToUploadFile          = 30,
 
     // 접속 불가
     FTP_CannotConnectToServer       = 998,
@@ -145,118 +148,6 @@ typedef enum {
 - (NSProgress * _Nullable)listContentsAtPath:(NSString * _Nonnull)remotePath
                              showHiddenFiles:(BOOL)showHiddenFiles
                                   completion:(void (^ _Nonnull)(NSArray<FTPItem *> * _Nullable items, NSError * _Nullable error))completion;
-///**
-// List directory contents at path.
-//
-// @param path Path to remote directory to list.
-// @param showHiddenItems Show hidden items in directory.
-// @return List of contents as FTPHandle objects.
-// */
-//- (NSArray * _Nullable)listContentsAtPath:(NSString * _Nonnull)path
-//                          showHiddenFiles:(BOOL)showHiddenFiles;
-//
-///**
-// Refer to listContentsAtPath:showHiddenFiles:
-//
-// This adds the ability to perform the operation asynchronously.
-//
-// @param path Path to remote directory to list.
-// @param showHiddenItems Show hidden items in directory.
-// @param success Method called when process succeeds. Provides list of contents
-//        as FTPHandle objects.
-// @param failure Method called when process fails.
-// */
-//- (void)listContentsAtPath:(NSString * _Nonnull)path
-//           showHiddenFiles:(BOOL)showHiddenFiles
-//                   success:(void (^ _Nonnull)(NSArray * _Nullable contents))success
-//                   failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
-//
-///**
-// List directory contents at handle's location.
-//
-// @param handle Remote directory handle to list.
-// @param showHiddenItems Show hidden items in directory.
-// @return List of contents as FTPHandle objects.
-// */
-//- (NSArray * _Nullable)listContentsAtHandle:(FTPHandle * _Nonnull)handle
-//                           showHiddenFiles:(BOOL)showHiddenFiles;
-//
-///**
-// Refer to listContentsAtHandle:showHiddenFiles:
-//
-// This adds the ability to perform the operation asynchronously.
-//
-// @param showHiddenItems Show hidden items in directory.
-// @param success Method called when process succeeds. Provides list of contents
-//        as FTPHandle objects.
-// @param failure Method called when process fails.
-// */
-//- (void)listContentsAtHandle:(FTPHandle * _Nonnull)handle
-//             showHiddenFiles:(BOOL)showHiddenFiles
-//                     success:(void (^ _Nonnull)(NSArray * _Nullable contents))success
-//                     failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
-//
-///**
-// Download remote file path to local path.
-//
-// @param fileName Full path of remote file to download.
-// @param localPath Local path to download file to.
-// @param progress Calls after data has been received to remote server.
-//        Return NO to cancel the operation.
-// @return YES on success. NO on failure.
-// */
-//- (BOOL)downloadFile:(NSString * _Nonnull)remotePath
-//                  to:(NSString * _Nonnull)localPath
-//            progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress;
-//
-///**
-// Refer to downloadFile:to:progress:
-//
-// This adds the ability to perform the operation asynchronously.
-//
-// @param fileName Full path of remote file to download.
-// @param localPath Local path to download file to.
-// @param progress Calls after data has been received to remote server.
-//        Return NO to cancel the operation.
-// @param success Method called when process succeeds.
-// @param failure Method called when process fails.
-// */
-//- (void)downloadFile:(NSString * _Nonnull)remotePath
-//                  to:(NSString * _Nonnull)localPath
-//            progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress
-//             success:(void (^ _Nonnull)(void))success
-//             failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
-//
-///**
-// Download handle at specific location.
-//
-// @param handle Handle to download. Handles are produced by listDirectory* and friends.
-// @param localPath Local path to download file to.
-// @param progress Calls after data has been received to remote server.
-//        Return NO to cancel the operation.
-// @return YES on success. NO on failure.
-// */
-//- (BOOL)downloadHandle:(FTPHandle * _Nonnull)handle
-//                    to:(NSString * _Nonnull)localPath
-//              progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress;
-//
-///**
-// Refer to downloadHandle:to:progress:
-//
-// This adds the ability to perform the operation asynchronously.
-//
-// @param handle Handle to download. Handles are produced by listDirectory* and friends.
-// @param localPath Local path to download file to.
-// @param progress Calls after data has been received to remote server.
-//        Return NO to cancel the operation.
-// @param success Method called when process succeeds.
-// @param failure Method called when process fails.
-// */
-//- (void)downloadHandle:(FTPHandle * _Nonnull)handle
-//                    to:(NSString * _Nonnull)localPath
-//              progress:(BOOL (^ _Nullable)(NSUInteger received, NSUInteger totalBytes))progress
-//               success:(void (^ _Nonnull)(void))success
-//               failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  FTP 경로에서 데이터를 파일로 다운로드.
@@ -318,6 +209,20 @@ typedef enum {
                                 length:(long long int)length
                             completion:(void (^ _Nonnull)(NSData * _Nullable data,
                                                           NSError * _Nullable error))completion;
+
+/**
+ 로컬 파일을 지정된 FTP 경로로 업로드.
+ 
+ - 반환된 NSProgress를 이용해 작업 취소 가능
+
+ @param localPath 업로드할 로컬 파일 경로.
+ @param remotePath 업로드할 FTP 경로.
+ @param completion 완료 핸들러. 실패시 error 반환.
+ @return NSProgress 반환. 실패시 NULL 반환
+ */
+- (NSProgress * _Nullable)uploadFileFrom:(NSString * _Nonnull)localPath
+                                      to:(NSString * _Nonnull)remotePath
+                              completion:(void (^ _Nonnull)(NSError * _Nullable error))completion;
 /**
  Upload file to specific directory on remote server.
  
@@ -368,29 +273,6 @@ typedef enum {
                       success:(void (^ _Nonnull)(void))success
                       failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
-///**
-// Create remote directory within the handle's location.
-//
-// @param directoryName Name of directory to create on remote server.
-// @param remotePath Path to remote directory where file should be created.
-// @return YES on success. NO on failure.
-// */
-//- (BOOL)createDirectoryAtHandle:(FTPHandle * _Nonnull)handle;
-//
-///**
-// Refer to createDirectoryAtHandle:
-//
-// This adds the ability to perform the operation asynchronously.
-//
-// @param directoryName Name of directory to create on remote server.
-// @param remotePath Path to remote directory where file should be created.
-// @param success Method called when process succeeds.
-// @param failure Method called when process fails.
-// */
-//- (void)createDirectoryAtHandle:(FTPHandle * _Nonnull)handle
-//                        success:(void (^ _Nonnull)(void))success
-//                        failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
-
 /**
  Delete directory at specified remote path.
  
@@ -434,28 +316,6 @@ typedef enum {
                  success:(void (^ _Nonnull)(void))success
                  failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
-///**
-// Delete a remote handle from the server.
-//
-// @param handle The remote handle to delete.
-// @return YES on success. NO on failure.
-// */
-//- (BOOL)deleteHandle:(FTPHandle * _Nonnull)handle;
-//
-///**
-// Refer to deleteHandle:
-//
-// This adds the ability to perform the operation asynchronously.
-//
-// @param handle The remote handle to delete.
-// @param success Method called when process succeeds.
-// @param failure Method called when process fails.
-// @return FTPRequest The request instance.
-// */
-//- (void)deleteHandle:(FTPHandle * _Nonnull)handle
-//             success:(void (^ _Nonnull)(void))success
-//             failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
-
 /**
  Change file mode of a remote file or directory.
  
@@ -479,30 +339,6 @@ typedef enum {
            toMode:(int)mode
           success:(void (^ _Nonnull)(void))success
           failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
-
-///**
-// Change file mode of a remote file or directory.
-//
-// @param handle The remote handle.
-// @param mode File mode to change to.
-// @return YES on success. NO on failure.
-// */
-//- (BOOL)chmodHandle:(FTPHandle * _Nonnull)handle toMode:(int)mode;
-//
-///**
-// Refer to chmodHandle:toMode:
-//
-// This adds the ability to perform the operation asynchronously.
-//
-// @param handle The remote handle to change mode on.
-// @param mode File mode to change to.
-// @param success Method called when process succeeds.
-// @param failure Method called when process fails.
-// */
-//- (void)chmodHandle:(FTPHandle * _Nonnull)handle
-//             toMode:(int)mode
-//            success:(void (^ _Nonnull)(void))success
-//            failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Rename a remote path to something else. This method can be used to move a
@@ -528,30 +364,6 @@ typedef enum {
                 to:(NSString * _Nonnull)destPath
            success:(void (^ _Nonnull)(void))success
            failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
-
-///**
-// Copy a remote path to another location.
-//
-// @param sourcePath Source path to copy.
-// @param destPath Destination of copied file.
-// */
-//- (BOOL)copyPath:(NSString * _Nonnull)sourcePath
-//              to:(NSString * _Nonnull)destPath;
-//
-///**
-// Refer to copyPath:to:
-//
-// This adds the ability to perform the operation asynchronously.
-//
-// @param sourcePath Source path to copy.
-// @param destPath Destination of copied file.
-// @param success Method called when process succeeds.
-// @param failure Method called when process fails.
-// */
-//- (void)copyPath:(NSString * _Nonnull)sourcePath
-//              to:(NSString * _Nonnull)destPath
-//         success:(void (^ _Nonnull)(void))success
-//         failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
 
 /**
  Returns the last modification date of remotePath. This will NOT work with

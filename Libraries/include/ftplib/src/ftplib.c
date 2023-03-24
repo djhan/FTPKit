@@ -1136,6 +1136,7 @@ GLOBALDEF int FtpAccess(const char *path,
         case FTPLIB_ABORT:
             strcpy(buf,"ABOR");
             dir = FTPLIB_ABORT;
+            checker = '2';
             break;
         default:
             sprintf(nControl->response, "Invalid open type %d\n", typ);

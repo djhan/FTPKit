@@ -48,7 +48,7 @@
                                              password:@"shakamuth837"];
     
     // Sanity. Make sure the root path exists. This should always be true.
-    BOOL success = [ftp directoryExistsAtPath:@"/"];
+    BOOL success = [ftp directoryExistsAtPath:@"0.Privates" error:NULL];
     XCTAssertTrue(success, @"");
     
     XCTestExpectation *expectationDir = [self expectationWithDescription:@"Read Directory..."];

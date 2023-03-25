@@ -54,18 +54,16 @@
 /** Queue used to enforce requests to process in synchronous order. */
 @property (nonatomic, strong) dispatch_queue_t queue;
 
-/** The last error encountered. */
-//@property (nonatomic, strong) NSError *lastError;
-
 /** NSString Encoding */
 @property (nonatomic) int encoding;
 
 /**
  Create connection to FTP server.
  
+ @param error 에러 발생시, 에러값을 반환하는 이중 포인터
  @return netbuf The connection to the FTP server on success. NULL otherwise.
  */
-- (netbuf * _Nullable)connect;
+- (netbuf * _Nullable)connect:(NSError *_Nullable * _Nullable)error;
 
 /**
  서버에 FTP 명령어 전송.
@@ -85,30 +83,6 @@
  @return String to temporary path.
  */
 - (NSString * _Nonnull)temporaryPath;
-
-///**
-// Sets lastError w/ 'message' as description and error code 502.
-//
-// @param message Description to set to last error.
-// */
-//- (void)failedWithMessage:(NSString * _Nonnull)message;
-//
-///**
-// Convenience method that wraps failure(error) in dispatch_async(main_queue)
-// and ensures that the error is copied before sending back to callee -- to ensure
-// it doesn't get nil'ed out by the next command before the callee has a chance
-// to read the error.
-// */
-//- (void)returnFailureLastError:(void (^)(NSError * _Nonnull error))failure;
-
-///**
-// URL encode a path.
-//
-// This method is used only on _existing_ files on the FTP server.
-//
-// @param path The path to URL encode.
-// */
-//- (NSString * _Nonnull)urlEncode:(NSString * _Nonnull)path;
 
 @end
 
@@ -620,7 +594,7 @@
  @returns 64비트 정수형으로 크기 반환. 실패시 -1 반환
  */
 - (long long int)fileSizeAt:(const char * _Nonnull)path {
-    netbuf *conn = [self connect];
+    netbuf *conn = [self connect:NULL];
     if (conn == NULL) {
         return -1;
     }
@@ -691,14 +665,14 @@
 - (NSProgress * _Nullable)listContentsAtPath:(NSString * _Nonnull)remotePath
                              showHiddenFiles:(BOOL)showHiddenFiles
                                   completion:(void (^ _Nonnull)(NSArray<FTPItem *> * _Nullable items, NSError * _Nullable error))completion {
-    netbuf *conn = [self connect];
+    NSError *connectionError = NULL;
+    netbuf *conn = [self connect:&connectionError];
     if (conn == NULL) {
-        // 접속 불가 에러
-        completion(NULL, [NSError FTPKitErrorWithCode:FTP_CannotConnectToServer]);
+        // 에러 반환
+        completion(NULL, connectionError);
         return NULL;
     }
 
-    //const char *path = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
     const char *path = [[remotePath urlEncodedString] cStringUsingEncoding:_encoding];
     NSProgress *progress = [self ftpXferReadDataFrom:path
                                               toPath:NULL
@@ -773,14 +747,15 @@
                                 offset:(long long int)offset
                                 length:(long long int)length
                             completion:(void (^ _Nonnull)(NSError * _Nullable error))completion {
-    netbuf *conn = [self connect];
+    
+    NSError *connectionError = NULL;
+    netbuf *conn = [self connect:&connectionError];
     if (conn == NULL) {
-        // 접속 불가 에러
-        completion([NSError FTPKitErrorWithCode:FTP_CannotConnectToServer]);
+        // 에러 반환 처리
+        completion(connectionError);
         return NULL;
     }
         
-    //const char *path = [[self urlEncode:remotePath] cStringUsingEncoding:self.encoding];
     const char *path = [[remotePath urlEncodedString] cStringUsingEncoding:self.encoding];
     const char *saveFilePath = [savePath cStringUsingEncoding:_encoding];
     if (path == NULL ||
@@ -859,14 +834,14 @@
                             completion:(void (^ _Nonnull)(NSData * _Nullable data,
                                                           NSError * _Nullable error))completion
 {
-    netbuf *conn = [self connect];
+    NSError *connectionError = NULL;
+    netbuf *conn = [self connect:&connectionError];
     if (conn == NULL) {
-        // 접속 실패
-        completion(NULL, [NSError FTPKitErrorWithCode:FTP_CannotConnectToServer]);
+        // 에러 반환 처리
+        completion(NULL, connectionError);
         return NULL;
     }
     
-    //const char *path = [[self urlEncode:remotePath] cStringUsingEncoding:self.encoding];
     const char *path = [[remotePath urlEncodedString] cStringUsingEncoding:self.encoding];
     if (path == NULL) {
         // 파일 열기 실패
@@ -918,10 +893,11 @@
         return NULL;
     }
 
-    netbuf *conn = [self connect];
+    NSError *connectionError = NULL;
+    netbuf *conn = [self connect:&connectionError];
     if (conn == NULL) {
-        // 접속 실패
-        completion([NSError FTPKitErrorWithCode:FTP_CannotConnectToServer]);
+        // 에러 반환 처리
+        completion(connectionError);
         return NULL;
     }
     
@@ -931,8 +907,6 @@
         return NULL;
     }
     
-    //const char *fromLocalPath = [[self urlEncode:localPath] cStringUsingEncoding:NSUTF8StringEncoding];
-    //const char *toSavePath = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
     const char *fromLocalPath = [[localPath urlEncodedString] cStringUsingEncoding:NSUTF8StringEncoding];
     const char *toSavePath = [[remotePath urlEncodedString] cStringUsingEncoding:_encoding];
     NSProgress *progress = [self ftpXferWriteFrom:fromLocalPath
@@ -959,10 +933,11 @@
  @returns 성공시 NULL 반환. 실패시 에러 반환
  */
 - (NSError * _Nullable)createDirectoryAtPath:(NSString * _Nonnull)remotePath {
-    netbuf *conn = [self connect];
+    NSError *error = NULL;
+    netbuf *conn = [self connect:&error];
     if (conn == NULL) {
         // 에러 반환
-        return [NSError FTPKitErrorWithCode:FTP_CannotConnectToServer];
+        return error;
     }
     const char *path = [remotePath cStringUsingEncoding:_encoding];
     int stat = FtpMkdir(path, conn);
@@ -1010,11 +985,11 @@
  */
 - (NSError * _Nullable)deleteItemAtPath:(NSString * _Nonnull)remotePath
                                  isFile:(BOOL)isFile {
-    netbuf *conn = [self connect];
+    NSError *error = NULL;
+    netbuf *conn = [self connect:&error];
     if (conn == NULL) {
-        return [NSError FTPKitErrorWithCode:FTP_CannotConnectToServer];
+        return error;
     }
-    //const char *path = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
     const char *path = [[remotePath urlEncodedString] cStringUsingEncoding:_encoding];
     int stat = 0;
     // 파일인 경우
@@ -1053,17 +1028,18 @@
                                                              forKey:NSLocalizedDescriptionKey];
         return [[NSError alloc] initWithDomain:FTPErrorDomain code:0 userInfo:userInfo];
     }
-    //NSString *command = [NSString stringWithFormat:@"SITE CHMOD %i %@", mode, [self urlEncode:remotePath]];
+    
     NSString *command = [NSString stringWithFormat:@"SITE CHMOD %i %@", mode, [remotePath urlEncodedString]];
-    netbuf *conn = [self connect];
+    NSError *error = NULL;
+    netbuf *conn = [self connect:&error];
     if (conn == NULL) {
-        return [NSError FTPKitErrorWithCode:FTP_CannotConnectToServer];
+        // 연결 실패시 에러 반환
+        return error;
     }
-    NSError *error = [self sendCommand:command conn:conn];
-    //NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
+    
+    error = [self sendCommand:command conn:conn];
     FtpQuit(conn);
     if (error != NULL) {
-        //return [NSError FTPKitErrorWithResponse:response];
         return error;
     }
     return NULL;
@@ -1078,11 +1054,13 @@
 
 - (NSError *)renamePath:(NSString *)sourcePath
                      to:(NSString *)destPath {
-    netbuf *conn = [self connect];
+    NSError *error = NULL;
+    netbuf *conn = [self connect:&error];
     if (conn == NULL) {
-        return [NSError FTPKitErrorWithCode:FTP_CannotConnectToServer];
+        // 에러 반환
+        return error;
     }
-    //const char *src = [[self urlEncode:sourcePath] cStringUsingEncoding:_encoding];
+
     const char *src = [[sourcePath urlEncodedString] cStringUsingEncoding:_encoding];
     // @note The destination path does not need to be URL encoded. In fact, if
     // it is, the filename will include the percent escaping!
@@ -1105,8 +1083,7 @@
 
 /** Private Methods */
 
-- (netbuf *)connect {
-    //self.lastError = nil;
+- (netbuf *)connect:(NSError **)error {
     const char *host = [_credentials.host cStringUsingEncoding:_encoding];
     const char *user = [_credentials.username cStringUsingEncoding:_encoding];
     const char *pass = [_credentials.password cStringUsingEncoding:_encoding];
@@ -1115,13 +1092,13 @@
     if (stat == 0) {
         // @fixme We don't get the exact error code from the lib. Use a generic
         // connection error.
-        //self.lastError = [NSError FTPKitErrorWithCode:10060];
+        *error = [NSError FTPKitErrorWithCode:10060];
         return NULL;
     }
     stat = FtpLogin(user, pass, conn);
     if (stat == 0) {
-        //NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
-        //self.lastError = [NSError FTPKitErrorWithResponse:response];
+        NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
+        *error = [NSError FTPKitErrorWithResponse:response];
         FtpQuit(conn);
         return NULL;
     }
@@ -1145,13 +1122,6 @@
     return NULL;
 }
 
-/*
-- (void)failedWithMessage:(NSString *)message {
-    self.lastError = [NSError errorWithDomain:FTPErrorDomain
-                                         code:502
-                                     userInfo:[NSDictionary dictionaryWithObject:message forKey:NSLocalizedDescriptionKey]];
-}
-*/
 - (NSString *)temporaryPath {
     // Do not use NSURL. It will not allow you to read the file contents.
     NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"FTPKit.list"];
@@ -1258,22 +1228,22 @@
     return parsedLists;
 }
 
-- (NSDate *)lastModifiedAtPath:(NSString *)remotePath {
-    netbuf *conn = [self connect];
+- (NSDate * _Nullable)lastModifiedAtPath:(NSString * _Nonnull)remotePath
+                                   error:(NSError ** _Nullable)error {
+    netbuf *conn = [self connect:error];
     if (conn == NULL) {
         return NULL;
     }
-    //const char *cPath = [[self urlEncode:remotePath] cStringUsingEncoding:_encoding];
     const char *cPath = [[remotePath urlEncodedString] cStringUsingEncoding:_encoding];
     char dt[kFTPKitRequestBufferSize];
     // This is returning FALSE when attempting to create a new folder that exists... why?
     // MDTM does not work with folders. It is meant to be used only for types
     // of files that can be downloaded using the RETR command.
     int stat = FtpModDate(cPath, dt, kFTPKitRequestBufferSize, conn);
-    //NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     FtpQuit(conn);
     if (stat == 0) {
-        //self.lastError = [NSError FTPKitErrorWithResponse:response];
+        *error = [NSError FTPKitErrorWithResponse:response];
         return NULL;
     }
     NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
@@ -1285,20 +1255,16 @@
     return date;
 }
 
-- (void)lastModifiedAtPath:(NSString *)remotePath success:(void (^)(NSDate *))success failure:(void (^)(NSError *))failure {
+- (void)lastModifiedAtPath:(NSString *)remotePath
+                completion:(void (^ _Nonnull)(NSDate * _Nullable modifiedDate, NSError * _Nullable error))completion {
     dispatch_async(_queue, ^{
-        NSDate *date = [self lastModifiedAtPath:remotePath];
-        if (! self->_lastError && success) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                success(date);
-            });
-        } else if (self->_lastError && failure) {
-            [self returnFailureLastError:failure];
-        }
+        NSError *error = NULL;
+        completion([self lastModifiedAtPath:remotePath error:&error], error);
     });
 }
 
-- (BOOL)directoryExistsAtPath:(NSString *)remotePath {
+- (BOOL)directoryExistsAtPath:(NSString * _Nonnull)remotePath
+                        error:(NSError *_Nullable * _Nullable)error {
     /**
      Test the directory by changing to the directory. If the process succeeds
      then the directory exists.
@@ -1331,36 +1297,34 @@
      Currently the lib creates a new connection for every command issued.
      Therefore, it is unnecessary to change back to the original cwd.
      */
-    netbuf *conn = [self connect];
+    netbuf *conn = [self connect:error];
     if (conn == NULL) {
         return NO;
     }
     const char *cPath = [remotePath cStringUsingEncoding:_encoding];
     int stat = FtpChdir(cPath, conn);
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     FtpQuit(conn);
     if (stat == 0) {
+        *error = [NSError FTPKitErrorWithResponse:response];
         return NO;
     }
     return YES;
 }
 
-- (void)directoryExistsAtPath:(NSString *)remotePath success:(void (^)(BOOL))success failure:(void (^)(NSError *))failure {
+- (void)directoryExistsAtPath:(NSString *)remotePath completion:(void (^ _Nonnull)(BOOL exists, NSError * _Nullable error))completion {
     dispatch_async(_queue, ^{
-        BOOL exists = [self directoryExistsAtPath:remotePath];
-        if (! self->_lastError && success) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                success(exists);
-            });
-        } else if (self->_lastError && failure) {
-            [self returnFailureLastError:failure];
-        }
+        NSError *error = NULL;
+        completion([self directoryExistsAtPath:remotePath error:&error], error);
     });
 }
 
 - (NSError *)changeDirectoryToPath:(NSString *)remotePath {
-    netbuf *conn = [self connect];
+    NSError *error = NULL;
+    netbuf *conn = [self connect:&error];
     if (conn == NULL) {
-        return [NSError FTPKitErrorWithCode:FTP_CannotConnectToServer];
+        // 에러 발생시 그대로 반환 처리
+        return error;
     }
     const char *cPath = [remotePath cStringUsingEncoding:_encoding];
     int stat = FtpChdir(cPath, conn);
@@ -1372,38 +1336,19 @@
     return NULL;
 }
 
-- (NSString *)printWorkingDirectory {
-    netbuf *conn = [self connect];
+- (NSString *)printWorkingDirectory:(NSError *_Nullable * _Nullable)error {
+    netbuf *conn = [self connect:error];
     if (conn == NULL) {
         return nil;
     }
     char cPath[kFTPKitTempBufferSize];
     int stat = FtpPwd(cPath, kFTPKitTempBufferSize, conn);
-    //NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
+    NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     FtpQuit(conn);
     if (stat == 0) {
-        //self.lastError = [NSError FTPKitErrorWithResponse:response];
-        return nil;
+        return [NSError FTPKitErrorWithResponse:response];
     }
     return [NSString stringWithCString:cPath encoding:_encoding];
-}
-
-/**
- lastError를 에러 완료 핸들러로 반환
- */
-- (void)returnFailureLastError:(void (^)(NSError * _Nonnull))failure {
-    NSError *error = [_lastError copy];
-    dispatch_async(dispatch_get_main_queue(), ^{
-        failure(error);
-    });
-}
-/**
- 특정 에러를 에러 완료 핸들러로 반환
- */
-- (void)returnFailure:(void (^)(NSError * _Nonnull))failure error:(NSError * _Nonnull)error {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        failure(error);
-    });
 }
 
 @end

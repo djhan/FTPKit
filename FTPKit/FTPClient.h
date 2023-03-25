@@ -338,9 +338,11 @@ typedef enum {
  directories, as the RFC spec does not require it.
  
  @param remotePath Path to get modified date for
+ @param error 에러 발생시 에러값을 반환하는 이중 포인터
  @return Date the remote path was last modified
  */
-- (NSDate * _Nullable)lastModifiedAtPath:(NSString * _Nonnull)remotePath;
+- (NSDate * _Nullable)lastModifiedAtPath:(NSString * _Nonnull)remotePath
+                                   error:(NSError *_Nullable * _Nullable)error;
 
 /**
  Refer to lastModifiedAtPath:
@@ -348,13 +350,10 @@ typedef enum {
  This adds the ability to perform the operation asynchronously.
  
  @param remotePath Remote path to check
- @param success Method called when process succeeds. 'lastModified' is the
- last modified time.
- @param failure Method called when process fails.
+ @param completion 성공시 마지막 수정일 반환, 실패시 에러값 반환.
  */
 - (void)lastModifiedAtPath:(NSString * _Nonnull)remotePath
-                   success:(void (^ _Nonnull)(NSDate * _Nullable lastModified))success
-                   failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
+                completion:(void (^ _Nonnull)(NSDate * _Nullable modifiedDate, NSError * _Nullable error))completion;
 
 /**
  Check if a remote directory exists.
@@ -363,9 +362,11 @@ typedef enum {
  _not_ change back to the previous directory!
  
  @param remotePath Directory to check
+ @param error 에러 발생시 에러값을 반환하는 이중 포인터
  @return YES if the directory exists. NO, otherwise
  */
-- (BOOL)directoryExistsAtPath:(NSString * _Nonnull)remotePath;
+- (BOOL)directoryExistsAtPath:(NSString * _Nonnull)remotePath
+                        error:(NSError *_Nullable * _Nullable)error;
 
 /**
  Refer to directoryExistsAtPath:
@@ -373,13 +374,10 @@ typedef enum {
  This adds the ability to perform the operation asynchronously.
  
  @param remotePath Remote path to check
- @param success Method called when process succeeds. 'exists' will be YES if the
- directory exists. NO otherwise.
- @param failure Method called when process fails.
+ @param completion 디렉토리 존재 유무를 BOOL 값으로 반환. 없는 경우 또는 확인 불가능시 에러 반환.
  */
 - (void)directoryExistsAtPath:(NSString * _Nonnull)remotePath
-                      success:(void (^ _Nonnull)(BOOL exists))success
-                      failure:(void (^ _Nonnull)(NSError * _Nullable error))failure;
+                   completion:(void (^ _Nonnull)(BOOL exists, NSError * _Nullable error))completion;
 
 /**
  Change the working directory to remotePath.
@@ -404,9 +402,10 @@ typedef enum {
  therefore the command will always being in the root path when issuing the
  command.
  
+ @param error 에러 발생시 에러값을 반환하는 이중 포인터
  @return The current working directory.
  */
-- (NSString * _Nullable)printWorkingDirectory;
+- (NSString * _Nullable)printWorkingDirectory:(NSError *_Nullable * _Nullable)error;
 
 @end
 

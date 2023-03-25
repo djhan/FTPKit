@@ -171,7 +171,8 @@
                 free(nData);
             }
             fclose(local);
-            unlink(fromPath);
+            // 파일을 제거하진 않는다!
+            //unlink(fromPath);
         }
         return NULL;
     }
@@ -238,7 +239,8 @@
         // 파일 입력 버퍼를 비우고 닫는다
         if (local != NULL) {
             fclose(local);
-            unlink(fromPath);
+            // 파일을 제거하진 않는다!
+            //unlink(fromPath);
         }
     });
     
@@ -874,6 +876,22 @@
 }
 
 /**
+ 로컬 파일을 지정된 FTP 디렉토리로 업로드.
+ 
+ - 반환된 NSProgress를 이용해 작업 취소 가능
+
+ @param localPath 업로드할 로컬 파일 경로.
+ @param remoteDirectory 업로드할 FTP 디렉토리 경로.
+ @param completion 완료 핸들러. 실패시 error 반환.
+ @return NSProgress 반환. 실패시 NULL 반환
+ */
+- (NSProgress * _Nullable)uploadFileFrom:(NSString * _Nonnull)localPath
+                             toDirectory:(NSString * _Nonnull)remoteDirectory
+                              completion:(void (^ _Nonnull)(NSError * _Nullable error))completion {
+    NSString *targetPath = [remoteDirectory stringByAppendingPathComponent:[localPath lastPathComponent]];
+    return [self uploadFileFrom:localPath to:targetPath completion:completion];
+}
+/**
  로컬 파일을 지정된 FTP 경로로 업로드.
  
  - 반환된 NSProgress를 이용해 작업 취소 가능
@@ -885,8 +903,7 @@
  */
 - (NSProgress * _Nullable)uploadFileFrom:(NSString * _Nonnull)localPath
                                       to:(NSString * _Nonnull)remotePath
-                              completion:(void (^ _Nonnull)(NSError * _Nullable error))completion
-{
+                              completion:(void (^ _Nonnull)(NSError * _Nullable error))completion {
     if ([[NSFileManager defaultManager] fileExistsAtPath:localPath] == false) {
         // 파일 열기 실패
         completion([NSError FTPKitErrorWithCode:FTP_FailedToOpenFile]);

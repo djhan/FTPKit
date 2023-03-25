@@ -97,8 +97,8 @@
     
     XCTestExpectation *expectationUpload = [self expectationWithDescription:@"Upload File..."];
 
-    NSProgress *uploadProgress = [ftp uploadFileFrom:@"/Volumes/Data/test.zip"
-                                                  to:@"/0.Privates/test_up.zip"
+    NSProgress *uploadProgress = [ftp uploadFileFrom:@"/Volumes/Data/test.7z"
+                                                  to:@"/0.Privates/test_up.7z"
                                           completion:^(NSError * _Nullable error) {
         if (error != NULL) {
             NSLog(@"업로드 실패. error code = %li", error.code);
@@ -107,8 +107,10 @@
     }];
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        NSLog(@"업로드 중지...");
-        [uploadProgress cancel];
+        if (uploadProgress != NULL) {
+            NSLog(@"업로드 중지...");
+            [uploadProgress cancel];
+        }
     });
     
     [self waitForExpectations:@[expectationUpload] timeout:30];

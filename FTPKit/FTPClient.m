@@ -1092,13 +1092,17 @@
     if (stat == 0) {
         // @fixme We don't get the exact error code from the lib. Use a generic
         // connection error.
-        *error = [NSError FTPKitErrorWithCode:10060];
+        if (error != NULL) {
+            *error = [NSError FTPKitErrorWithCode:10060];
+        }
         return NULL;
     }
     stat = FtpLogin(user, pass, conn);
     if (stat == 0) {
         NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
-        *error = [NSError FTPKitErrorWithResponse:response];
+        if (error != NULL) {
+            *error = [NSError FTPKitErrorWithResponse:response];
+        }
         FtpQuit(conn);
         return NULL;
     }
@@ -1243,7 +1247,9 @@
     NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     FtpQuit(conn);
     if (stat == 0) {
-        *error = [NSError FTPKitErrorWithResponse:response];
+        if (error != NULL) {
+            *error = [NSError FTPKitErrorWithResponse:response];
+        }
         return NULL;
     }
     NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
@@ -1306,7 +1312,9 @@
     NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     FtpQuit(conn);
     if (stat == 0) {
-        *error = [NSError FTPKitErrorWithResponse:response];
+        if (error != NULL) {
+            *error = [NSError FTPKitErrorWithResponse:response];
+        }
         return NO;
     }
     return YES;
@@ -1346,7 +1354,10 @@
     NSString *response = [NSString stringWithCString:FtpLastResponse(conn) encoding:_encoding];
     FtpQuit(conn);
     if (stat == 0) {
-        return [NSError FTPKitErrorWithResponse:response];
+        if (error != NULL) {
+            *error = [NSError FTPKitErrorWithResponse:response];
+        }
+        return nil;
     }
     return [NSString stringWithCString:cPath encoding:_encoding];
 }
